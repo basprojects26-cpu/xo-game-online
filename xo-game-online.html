@@ -280,7 +280,7 @@
         }
 
         /* Shop Items */
-        #menu div {
+        #menu div:not(.spinner-ring) {
             background: rgba(255, 255, 255, 0.05);
             margin: 10px 0;
             padding: 10px;
@@ -288,6 +288,17 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .spinner-ring {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #ffcc00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            background: none !important;
         }
 
         .locked {
@@ -737,6 +748,11 @@
             font-size: 11px;
             color: #888;
         }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .friend-item { display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:10px 15px; border-radius:10px; margin:8px 0; }
+        .friend-online { color: #4ade80; }
+        .friend-offline { color: #888; }
+        .player-id-display { color:#ffcc00; font-size:14px; letter-spacing:2px; cursor:pointer; }
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -969,6 +985,8 @@
             if (!data.avatar) data.avatar = "👤";
             if (!data.username) data.username = "Player";
             if (!data.unlocked_avatars) data.unlocked_avatars = { "👤": true };
+            if (!data.player_id) data.player_id = 'XO-' + Math.random().toString(36).substring(2,7).toUpperCase();
+            if (!data.friends) data.friends = [];
             data.coins = Infinity
             save_data(data);
             return data;
@@ -986,26 +1004,28 @@
         // PROFILE PAGE LOGIC
         function show_profile() {
             if (current_game) return;
-            document.getElementById("game").innerHTML = "";
+            document.getElementById('game').innerHTML = '';
             let html = `<h3 id='profile_pic'>Profile</h3>
-                <div  id='data_username' style="font-size:50px; margin:10px;">${data.avatar}</div>
+                <div id='data_username' style="font-size:50px; margin:10px;">${data.avatar}</div>
+                <div style="background:rgba(255,204,0,0.1);border:1px solid #ffcc00;border-radius:10px;padding:12px;margin:10px 0;">
+                    <p style="color:#888;font-size:12px;margin:0;">Your Player ID</p>
+                    <p class="player-id-display" onclick="navigator.clipboard.writeText('${data.player_id}');show_toast('ID Copied!')">${data.player_id} 📋</p>
+                </div>
                 <div id="input_btn_div">
                     <input type="text" id="username_input" maxlength="15" value="${data.username}" style="padding:8px; border-radius:5px; border:1px solid var(--accent); background:var(--bg-color); color:white; text-align:center;">
-                    
                     <button onclick="save_username()">Save Name</button>
                 </div>`;
+            html += `<button onclick="show_friends_page()" style="border:2px solid #4ade80; box-shadow:0 0 8px rgba(74,222,128,0.3);">\ud83d\udc65 Friends (${data.friends.length})</button>`;
             html += `<p id="managing_avatar">Manage your Avatars</p>`;
-
             for (let av in AVATAR_PRICES) {
                 html += `<div id='avatar_div'><span id='avatar'>${av}</span>`;
-                if (data.avatar === av) html += "<span id='equiped_avatar' >Equipped</span>";
+                if (data.avatar === av) html += "<span id='equiped_avatar'>Equipped</span>";
                 else if (data.unlocked_avatars[av]) html += `<button onclick="equip_avatar('${av}')">Use</button>`;
                 else html += `<button onclick="buy_avatar(event, '${av}')">Buy (${AVATAR_PRICES[av]})</button>`;
-                html += "</div>";
+                html += '</div>';
             }
-
             html += `<button onclick="show_menu()">Back</button>`;
-            document.getElementById("menu").innerHTML = html;
+            document.getElementById('menu').innerHTML = html;
         }
 
         function save_username() {
@@ -1143,17 +1163,27 @@
         let replay_requested = false;
 
         if (socket) {
+            socket.emit('register_player', data.player_id);
+
             socket.on('room_created', (roomId) => {
                 online_room = roomId;
-                document.getElementById("menu").innerHTML = `
+                let inviteHtml = '';
+                if (data.friends.length > 0) {
+                    inviteHtml = '<h4 style="color:white;margin-top:15px;">Invite a Friend:</h4>';
+                    data.friends.forEach(f => {
+                        inviteHtml += `<button onclick="send_invite_to('${f.id}')" style="font-size:18px;height:50px;">${f.avatar} ${f.name}</button>`;
+                    });
+                }
+                document.getElementById('menu').innerHTML = `
                     <h3 style="color:white; text-shadow: 0 0 5px blue; margin-bottom:20px;">Room Created!</h3>
                     <div style="background:rgba(255,204,0,0.15); border:2px solid #ffcc00; border-radius:15px; padding:20px; margin-bottom:20px;">
                         <p style="color:#aaa; font-size:16px; margin-bottom:10px;">Room ID:</p>
                         <p style="color:#ffcc00; font-size:40px; letter-spacing:8px; text-shadow:0 0 15px rgba(255,204,0,0.5);">${roomId}</p>
                     </div>
                     <p style="color:white; font-size:16px;">Share this code with your friend!</p>
-                    <div style="width:40px;height:40px;border:4px solid rgba(255,255,255,0.1);border-top-color:#ffcc00;border-radius:50%;animation:spin 1s linear infinite;margin:20px auto;"></div>
+                    <div class="spinner-ring"></div>
                     <p style="color:#888; font-size:14px;">Waiting for opponent to join...</p>
+                    ${inviteHtml}
                     <button onclick="leave_online_lobby()">Cancel</button>
                 `;
             });
@@ -1180,7 +1210,7 @@
                 if (current_game) {
                     current_game.board = board_state;
                     render_game();
-                    show_toast("DRAW: RANDOM TILES CLEARED!");
+                    show_toast('DRAW: RANDOM TILES CLEARED!');
                 }
             });
 
@@ -1207,16 +1237,55 @@
                 reset_game_online(info.starter);
             });
 
-            socket.on('player_disconnected', (msg) => {
-                is_online_mode = false;
-                if (current_game) {
+            socket.on('player_disconnected', (info) => {
+                let wasActive = info.duringGame;
+                let gameWasOver = current_game && current_game.game_over;
+                if (current_game && wasActive) {
+                    // Opponent left MID-GAME — end the game, you win
                     current_game.game_over = true;
-                    render_game();
-                    document.getElementById('status').innerText = 'Opponent Disconnected!';
-                    let r = document.getElementById('replay'); if (r) r.style.display = 'none';
+                    is_online_mode = false;
+                    online_room = '';
+                    document.getElementById('menu').innerHTML = '';
+                    document.getElementById('game').innerHTML = `
+                        <h3 style="color:#fb7185; text-shadow:0 0 10px rgba(251,113,133,0.5); margin-bottom:20px;">⚠️ Opponent Disconnected!</h3>
+                        <p style="color:white; font-size:18px; margin-bottom:30px;">Your opponent left the game early.<br>You win by default! 🎉</p>
+                        <button onclick="current_game=null;is_online_mode=false;show_menu();change_h1_menu();">Back to Menu</button>
+                    `;
+                    show_toast(info.msg);
+                    trigger_confetti();
+                } else if (current_game && gameWasOver) {
+                    // Opponent left AFTER game ended — show notice, keep UI
+                    is_online_mode = false;
+                    online_room = '';
+                    show_toast('Opponent has left the room.');
+                    // Replace game buttons with back to menu
+                    let replay = document.getElementById('replay');
+                    if (replay) replay.style.display = 'none';
+                    let replayStatus = document.getElementById('replay-status');
+                    if (replayStatus) replayStatus.style.display = 'none';
+                    // Add a back to menu button
+                    let existingLeave = document.querySelector('#game button[onclick*="confirm_leave_online"]');
+                    if (existingLeave) existingLeave.outerHTML = '<button onclick="current_game=null;is_online_mode=false;show_menu();change_h1_menu();">Back to Menu</button>';
+                } else {
+                    // Not in a game yet (lobby stage)
+                    is_online_mode = false;
+                    online_room = '';
+                    current_game = null;
+                    show_menu(); change_h1_menu();
+                    show_toast(info.msg);
                 }
-                show_toast(msg);
             });
+
+            socket.on('game_invite', (info) => {
+                show_confirm_modal(`${info.from.avatar} ${info.from.name} invited you to play!`, () => {
+                    socket.emit('join_room', { roomId: info.roomId, profile: { name: data.username, avatar: data.avatar, theme: data.equipped } });
+                });
+            });
+        }
+
+        function send_invite_to(friendId) {
+            socket.emit('send_invite', { friendId: friendId, roomId: online_room, from: { name: data.username, avatar: data.avatar } });
+            show_toast('Invite sent!');
         }
 
         function leave_online_lobby() {
@@ -1500,14 +1569,32 @@
 
             document.getElementById("menu").innerHTML = "";
 
-            let turnText = is_online_mode
-                ? (g.turn === my_online_symbol ? 'Your Turn' : "Opponent's Turn")
-                : `Current move: ${symbols[g.turn]}`;
-            if (g.mode === 'randomizer') turnText += ' (Randomizer)';
+            let turnText;
+            if (g.game_over) {
+                if (is_online_mode) {
+                    let w = check_winner(g.board, g.size);
+                    turnText = w ? (w === my_online_symbol ? 'You Win! \uD83C\uDF89' : 'You Lose!') : 'Draw!';
+                } else {
+                    let w = check_winner(g.board, g.size);
+                    turnText = w ? `${symbols[w]} Wins!` : 'Draw!';
+                }
+            } else {
+                turnText = is_online_mode
+                    ? (g.turn === my_online_symbol ? 'Your Turn' : "Opponent's Turn")
+                    : `Current move: ${symbols[g.turn]}`;
+                if (g.mode === 'randomizer') turnText += ' (Randomizer)';
+            }
 
-            let replayBtn = is_online_mode
-                ? `<button id="replay" style="display:none;" onclick="request_online_replay()">Play Again?</button><div id="replay-status" style="display:none; color:#ffcc00; font-size:16px; margin:10px 0;"></div>`
-                : `<button id="replay" style="display:none;" onclick="reset_game()">Replay</button>`;
+            let replayDisplay = g.game_over ? 'inline-block' : 'none';
+            let replayText = replay_requested ? 'Waiting for opponent...' : (is_online_mode ? 'Play Again?' : 'Replay');
+            let replayBtn;
+            if (is_online_mode && !g.game_over) {
+                replayBtn = `<button id="replay" style="display:none;" onclick="request_online_replay()">Play Again?</button><div id="replay-status" style="display:none; color:#ffcc00; font-size:16px; margin:10px 0;"></div>`;
+            } else if (is_online_mode && g.game_over) {
+                replayBtn = `<button id="replay" style="display:inline-block;${replay_requested ? 'opacity:0.6;pointer-events:none;' : ''}" onclick="request_online_replay()">${replayText}</button><div id="replay-status" style="display:${replay_requested ? 'block' : 'none'}; color:#ffcc00; font-size:16px; margin:10px 0;">${replay_requested ? '\u2705 You are ready!' : ''}</div>`;
+            } else {
+                replayBtn = `<button id="replay" style="display:${replayDisplay};" onclick="reset_game()">Replay</button>`;
+            }
             let leaveBtn = is_online_mode
                 ? `<button onclick="confirm_leave_online()">Leave Room</button>`
                 : `<button onclick="confirm_leave()">Menu</button>`;
@@ -1728,12 +1815,58 @@
             render_game();
         }
 
+        function show_friends_page() {
+            document.getElementById('game').innerHTML = '';
+            let html = `<h3 style="color:white; text-shadow:0 0 5px blue;">\ud83d\udc65 Friends</h3>`;
+            html += `<div style="margin:15px 0;"><input type="text" id="friend_id_input" maxlength="10" placeholder="Enter Player ID (XO-XXXXX)" style="font-family:'Orbitron',sans-serif; font-size:16px; text-transform:uppercase; text-align:center; width:280px; padding:10px; background:var(--cell-bg); color:#ffcc00; border:2px solid #4ade80; border-radius:10px; letter-spacing:2px;"><br><button onclick="add_friend_action()" style="border:2px solid #4ade80;">Add Friend</button></div>`;
+            if (data.friends.length === 0) {
+                html += `<p style="color:#888; font-size:14px; margin:20px 0;">No friends yet. Share your ID to get started!</p>`;
+            } else {
+                if (socket) {
+                    let ids = data.friends.map(f => f.id);
+                    socket.emit('check_friends_online', ids, (statuses) => {
+                        let listHtml = '';
+                        data.friends.forEach(f => {
+                            let online = statuses[f.id];
+                            listHtml += `<div class="friend-item"><span>${f.avatar} <span class="${online ? 'friend-online' : 'friend-offline'}">${f.name}</span> <span style="color:#888;font-size:11px;">${f.id}</span></span><span>${online ? '<span class="friend-online">\u2022 Online</span>' : '<span class="friend-offline">\u2022 Offline</span>'} <button onclick="remove_friend('${f.id}')" style="width:auto;height:auto;padding:5px 10px;font-size:12px;background:#dc2626;">Remove</button></span></div>`;
+                        });
+                        document.getElementById('friends-list-container').innerHTML = listHtml;
+                    });
+                    html += `<div id="friends-list-container"><p style="color:#888;">Loading...</p></div>`;
+                } else {
+                    data.friends.forEach(f => {
+                        html += `<div class="friend-item"><span>${f.avatar} ${f.name} <span style="color:#888;font-size:11px;">${f.id}</span></span><button onclick="remove_friend('${f.id}')" style="width:auto;height:auto;padding:5px 10px;font-size:12px;background:#dc2626;">Remove</button></div>`;
+                    });
+                }
+            }
+            html += `<button onclick="show_profile()">Back</button>`;
+            document.getElementById('menu').innerHTML = html;
+        }
+
+        function add_friend_action() {
+            let id = document.getElementById('friend_id_input').value.trim().toUpperCase();
+            if (!id || !id.startsWith('XO-') || id.length < 5) { show_toast('Invalid Player ID! Format: XO-XXXXX'); return; }
+            if (id === data.player_id) { show_toast("You can't add yourself!"); return; }
+            if (data.friends.find(f => f.id === id)) { show_toast('Already in your friend list!'); return; }
+            data.friends.push({ id: id, name: 'Player', avatar: '\ud83d\udc64' });
+            save_data(data);
+            show_toast('Friend added! \u2705');
+            show_friends_page();
+        }
+
+        function remove_friend(id) {
+            data.friends = data.friends.filter(f => f.id !== id);
+            save_data(data);
+            show_toast('Friend removed.');
+            show_friends_page();
+        }
+
         function confirm_leave_online() {
             show_confirm_modal('Leave the online room?', () => {
                 is_online_mode = false;
                 online_room = '';
                 current_game = null;
-                if (socket) { socket.disconnect(); socket.connect(); }
+                if (socket) { socket.disconnect(); socket.connect(); socket.emit('register_player', data.player_id); }
                 show_menu();
                 change_h1_menu();
             });
@@ -1745,50 +1878,33 @@
             let themesArray = [...Object.keys(THEME_PRICES)];
             for (let theme of themesArray) {
                 html += `<div id="themes">`;
-
                 html += `<span id='themes_logos'>${theme}</span>`;
                 if (data.equipped === theme) html += "<span id='equip_span'>Equipped</span>";
-                else if (data.themes[theme]) html += `<button id="equip_btn"  onclick="equip('${theme}')">Equip</button>`;
+                else if (data.themes[theme]) html += `<button id="equip_btn" onclick="equip('${theme}')">Equip</button>`;
                 else html += `<button id='buy_btn' onclick="buy(event, '${theme}')">Buy (${THEME_PRICES[theme]})</button>`;
-                html += "</div>";
+                html += '</div>';
             }
             html += `<button onclick="show_menu()">Menu</button>`;
-            document.getElementById("menu").innerHTML = html;
+            document.getElementById('menu').innerHTML = html;
         }
 
         function buy(e, theme) {
             let price = THEME_PRICES[theme] || 100;
             if (data.coins >= price) {
-                data.coins -= price;
-                data.themes[theme] = true;
-                save_data(data);
-                shop();
-                update_coin_display();
-                trigger_ripple(e);
-                show_toast("Purchase successful!");
-            }
-            else { show_toast("Not enough coins"); }
+                data.coins -= price; data.themes[theme] = true;
+                save_data(data); shop(); update_coin_display();
+                trigger_ripple(e); show_toast('Purchase successful!');
+            } else { show_toast('Not enough coins'); }
         }
 
-        function equip(theme) { data.equipped = theme; save_data(data); shop(); show_toast("Theme equipped!"); }
+        function equip(theme) { data.equipped = theme; save_data(data); shop(); show_toast('Theme equipped!'); }
         function body_check() {
             const themeElement = document.getElementById('themes');
-
-            if (document.body.contains(themeElement)) {
-                document.body.style.display = "flex";
-            }
-            else {
-                console.log("The themes card is NOT in the body.");
-            }
+            if (document.body.contains(themeElement)) document.body.style.display = 'flex';
         }
-        var title = document.getElementById("h1");
-        function change_h1() {
-            title.innerHTML = "Choose your opponent";
-
-        }
-        function change_h1_menu() {
-            title.innerHTML = "Tic Tac Toe Ultimate";
-        }
+        var title = document.getElementById('h1');
+        function change_h1() { title.innerHTML = 'Choose your opponent'; }
+        function change_h1_menu() { title.innerHTML = 'Tic Tac Toe Ultimate'; }
 
         show_menu();
     </script>
