@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tic Tac Toe Ultimate</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- MODERNIZED UI STYLES --- */
+        :root {
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --accent: blue;
+            --text: #ffffff;
+            --cell-bg: #0f3460;
+        }
+
+        body {
+
+            text-align: center;
+            background: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Orbitron', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- ANIMATIONS ADDED --- */
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-10px) rotate(-1deg);
+            }
+
+            50% {
+                transform: translateX(10px) rotate(1deg);
+            }
+
+            75% {
+                transform: translateX(-10px);
+            }
+        }
+
+        .shake-effect {
+            animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(4);
+                opacity: 0;
+            }
+        }
+
+        .ripple-bg {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            background: rgba(0, 100, 255, 0.4);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            animation: ripple 0.8s ease-out forwards;
+        }
+
+        .coin-particle {
+            position: fixed;
+            font-size: 24px;
+            pointer-events: none;
+            z-index: 999;
+            animation: drop-coin 2s linear forwards;
+        }
+
+        @keyframes drop-coin {
+            0% {
+                transform: translateY(-10vh) rotate(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(110vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            z-index: 999;
+            animation: fall 3s linear forwards;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10vh) rotate(0deg);
+            }
+
+            100% {
+                transform: translateY(110vh) rotate(720deg);
+            }
+        }
+
+        /* Custom Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000;
+            /* Matches the background grid */
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, #0064ff, #00d4ff);
+            border-radius: 10px;
+            border: 2px solid #000;
+            /* Creates a padding effect */
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
+        }
+
+        /* Smooth Scrolling for the whole page */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Firefox Support */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #0064ff #000;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2px;
+            text-shadow: 2px 2px 10px rgba(33, 21, 255, 0.5);
+            font-family: 'Orbitron', sans-serif;
+            color: blue;
+            font-size: 55px;
+
+            margin-top: 10px;
+        }
+
+        #coin_display {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            margin-top: 10px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 2px blue;
+        }
+
+        /* --- PROFILE BUTTON TOP LEFT --- */
+        #profile_container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #profile_btn {
+            background: var(--card-bg);
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            width: 60px;
+            z-index: 2;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #username_display {
+            font-weight: bold;
+            color: var(--text);
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Container for Menu and Game */
+        #menu,
+        #game {
+
+            padding: 30px;
+            border-radius: 20px;
+
+            max-width: 500px;
+            width: 90%;
+            transition: all 0.3s ease;
+        }
+
+        /* Buttons */
+        button {
+            z-index: 2;
+            font-family: 'Orbitron', sans-serif;
+            background: var(--cell-bg);
+            width: 450px;
+            height: 75px;
+            padding: 15px 0;
+            border-radius: 12px;
+            color: white;
+            outline: 0px;
+            border: 1px solid transparent;
+            padding: 12px 24px;
+            margin: 8px;
+            font-size: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        button:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Grid Styling */
+        .grid {
+            margin-top: 70px !important;
+            display: grid;
+            gap: 0px;
+            margin: 25px auto;
+            justify-content: center;
+        }
+
+        .cell {
+            width: 80px;
+            height: 80px;
+            font-size: 32px;
+            background: var(--cell-bg);
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell:hover:not(:disabled) {
+            background: #1a4a80;
+        }
+
+        .fading span {
+            opacity: 0.3;
+            filter: grayscale(1);
+            transition: opacity 0.3s ease;
+        }
+
+        /* Shop Items */
+        #menu div {
+            background: rgba(255, 255, 255, 0.05);
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .locked {
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        #status {
+            font-size: 20px;
+            margin: 15px 0;
+            font-weight: bold;
+            color: var(--accent);
+            margin-top: -20px;
+            margin-bottom: -40px !important;
+        }
+
+        ul {
+            text-align: left;
+            line-height: 1.6;
+        }
+
+        /* Background flying X and O */
+        .bg-animation {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .bg-animation span {
+            position: absolute;
+            bottom: -100px;
+            font-size: 60px;
+            font-weight: bold;
+            color: blue;
+            animation: floatUp 12s linear infinite;
+        }
+
+        /* Random horizontal positions */
+        .bg-animation span:nth-child(1) {
+            left: 5%;
+            animation-duration: 12s;
+            font-size: 100px;
+        }
+
+        .bg-animation span:nth-child(2) {
+            left: 15%;
+            animation-duration: 18s;
+            font-size: 70px;
+        }
+
+        .bg-animation span:nth-child(3) {
+            left: 25%;
+            animation-duration: 14s;
+            font-size: 100px;
+        }
+
+        .bg-animation span:nth-child(4) {
+            left: 35%;
+            animation-duration: 20s;
+            font-size: 100px;
+        }
+
+        .bg-animation span:nth-child(5) {
+            left: 45%;
+            animation-duration: 11s;
+            font-size: 75px;
+        }
+
+        .bg-animation span:nth-child(6) {
+            left: 55%;
+            animation-duration: 17s;
+            font-size: 65px;
+        }
+
+        .bg-animation span:nth-child(7) {
+            left: 65%;
+            animation-duration: 13s;
+            font-size: 100px;
+        }
+
+        .bg-animation span:nth-child(8) {
+            left: 75%;
+            animation-duration: 16s;
+            font-size: 100px;
+        }
+
+        .bg-animation span:nth-child(9) {
+            left: 85%;
+            animation-duration: 19s;
+            font-size: 70px;
+        }
+
+        .bg-animation span:nth-child(10) {
+            left: 30%;
+            animation-duration: 15s;
+            font-size: 100px;
+        }
+
+        .bg-animation span:nth-child(11) {
+            left: 60%;
+            animation-duration: 21s;
+            font-size: 65px;
+        }
+
+        .bg-animation span:nth-child(12) {
+            left: 80%;
+            animation-duration: 12s;
+            font-size: 75px;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 0.15;
+            }
+
+            90% {
+                opacity: 0.15;
+            }
+
+            100% {
+                transform: translateY(-110vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        #hard_mode {
+            width: 440px !important;
+            height: 70px !important;
+            font-size: 20px;
+            display: flex !important;
+            justify-content: center !important;
+            margin-left: 20px !important;
+        }
+
+        #score {
+            color: white;
+            margin-top: -60px !important;
+            font-size: 20px !important;
+            padding-top: 20px !important;
+            margin-bottom: 50px !important;
+
+        }
+
+        #username_display {
+            width: 140px;
+            position: relative;
+            left: -20%;
+
+            background-color: #0064ff;
+            height: 60px;
+            line-height: 60px;
+            border-top-right-radius: 30px;
+            border-bottom-right-radius: 30px;
+            z-index: 1;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #themes {
+            height: 300px;
+            width: 700px !important;
+            line-height: 300px;
+            left: -22% !important;
+            position: relative;
+
+
+            margin-bottom: 30px !important;
+            z-index: 2;
+        }
+
+        #buy_btn {
+            width: 100.2%;
+            position: absolute;
+            bottom: -3.5%;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            border-top-left-radius: 0px;
+            border-top-right-radius: 0px;
+            left: -1%;
+
+        }
+
+        #equip_span {
+            width: 100.2%;
+            position: absolute;
+            background-color: red;
+            z-index: 2;
+            height: 72px;
+            bottom: 0%;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            border-top-left-radius: 0px;
+            border-top-right-radius: 0px;
+            left: 0%;
+            line-height: 75px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        #equip_btn {
+            width: 100.2%;
+            position: absolute;
+            bottom: -3.5%;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            border-top-left-radius: 0px;
+            border-top-right-radius: 0px;
+            left: -1%;
+
+        }
+
+        .O {
+            font-family: 'Courier New', Courier, monospace !important;
+
+        }
+
+        #locker {
+            margin-bottom: 30px;
+            font-size: 45px;
+            margin-top: 0px;
+        }
+
+        #themes img {
+            width: 820px;
+            height: 400px;
+            position: absolute;
+            top: 0%;
+            left: 0%;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+
+        }
+
+        #rules_div {
+            width: 700px;
+            margin-top: -80px;
+            font-size: 25px;
+            margin-left: -90px;
+            margin-bottom: 40px !important;
+        }
+
+        #profile_pic {
+            font-size: 50px;
+            margin-top: -5px;
+            margin-left: -25px;
+            margin-bottom: 20px;
+
+        }
+
+        #data_username {
+            width: 200px !important;
+            display: flex !important;
+            font-size: 100px !important;
+            justify-content: center !important;
+            align-items: center !important;
+            height: 200px !important;
+            border-radius: 50% !important;
+            text-align: center !important;
+            line-height: 300px !important;
+            border: 2px solid var(--accent) !important;
+            margin-left: 130px !important;
+            margin-bottom: 30px !important;
+        }
+
+        #avatar {
+            font-size: 100px !important;
+        }
+
+        #equiped_avatar {
+            font-size: 40px !important;
+            position: absolute;
+            left: 42.5%;
+        }
+
+        #avatar_div {
+            position: relative;
+        }
+
+        #managing_avatar {
+            margin-top: 45px !important;
+            margin-bottom: 30px !important;
+            font-size: 23px;
+        }
+
+        #username_input {
+            width: 100% !important;
+        }
+
+        #themes_logos {
+            font-size: 150px;
+            position: absolute;
+            top: -5%;
+            left: 7%;
+        }
+
+        /* --- ADDED SMOOTH NOTIFICATION & CONFIRMATION STYLES --- */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        .toast {
+            background: var(--card-bg);
+            color: var(--text);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 2px solid var(--accent);
+            margin-bottom: 10px;
+            font-weight: bold;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #custom-confirm {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #custom-confirm.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .confirm-box {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid var(--accent);
+            text-align: center;
+        }
+
+        .confirm-box button {
+            width: auto;
+            min-width: 100px;
+            margin: 10px;
+        }
+
+        /* Music Control Panel */
+        #music_panel {
+            position: absolute;
+            top: 90px;
+            left: 20px;
+            background: rgba(22, 33, 62, 0.8);
+            padding: 10px;
+            border-radius: 15px;
+            border: 1px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        #music_panel button {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            font-size: 18px;
+        }
+
+        /* --- ONLINE MULTIPLAYER STYLES --- */
+        .online-scorebar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 204, 0, 0.3);
+            border-radius: 15px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            margin-top: -40px;
+            backdrop-filter: blur(5px);
+        }
+
+        .os-player {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .os-me {
+            color: #4ade80;
+        }
+
+        .os-opp {
+            color: #fb7185;
+        }
+
+        .os-avatar {
+            font-size: 28px;
+        }
+
+        .os-name {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .os-pts {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffcc00;
+            text-shadow: 0 0 8px rgba(255, 204, 0, 0.5);
+        }
+
+        .os-center {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .os-vs {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffcc00;
+        }
+
+        .os-round {
+            font-size: 11px;
+            color: #888;
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+
+    <div id="toast-container"></div>
+    <div id="custom-confirm">
+        <div class="confirm-box">
+            <p id="confirm-msg" style="font-size: 20px; margin-bottom: 20px;"></p>
+            <button id="confirm-yes">Yes</button>
+            <button id="confirm-no">No</button>
+        </div>
+    </div>
+
+    <div id="profile_container">
+        <div id="profile_btn" onclick="show_profile()">👤</div>
+
+        <div id="username_display">Guest</div>
+    </div>
+
+    <div id="music_panel">
+        <button id="mute_btn" onclick="toggle_music()">🔊</button>
+        <input type="range" id="volume_slider" min="0" max="1" step="0.1" value="0.5"
+            oninput="change_volume(this.value)" style="width: 80px; cursor: pointer;">
+    </div>
+
+    <h1 id="h1">Tic Tac Toe Ultimate</h1>
+    <div id="menu"></div>
+    <div id="game"></div>
+    <div class="bg-animation">
+        <span>X</span>
+        <span class="O">O</span>
+        <span>X</span>
+        <span class="O">O</span>
+        <span>X</span>
+        <span class="O">O</span>
+        <span>X</span>
+        <span class="O">O</span>
+        <span>X</span>
+        <span class="O">O</span>
+        <span>X</span>
+        <span class="O">O</span>
+    </div>
+
+    <script>
+        // --- MUSIC SYSTEM ---
+        // Replace this URL with your desired song link
+        const MUSIC_URL = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3";
+        const bg_music = new Audio(MUSIC_URL);
+        bg_music.loop = true;
+        bg_music.volume = 0.5;
+
+        function start_music() {
+            bg_music.play().catch(() => {
+                // Handle browser autoplay restriction
+                window.addEventListener('click', () => bg_music.play(), { once: true });
+            });
+        }
+
+        function toggle_music() {
+            const btn = document.getElementById("mute_btn");
+            if (bg_music.muted) {
+                bg_music.muted = false;
+                btn.innerText = "🔊";
+            } else {
+                bg_music.muted = true;
+                btn.innerText = "🔇";
+            }
+        }
+
+        function change_volume(val) {
+            bg_music.volume = val;
+        }
+
+        // Start music on load
+        start_music();
+
+        const DATA_KEY = "ttt_data_v4";
+        const THEME_PRICES = {
+            "❌vs⭕": 1, "😂vs😭": 1000, "👍vs👎": 2000, "🥵vs🥶": 3000, "🐔vs🥚": 4000,
+            "💧vs🔥": 5000, "🐶vs🦴": 6000, "🐒vs🍌": 7000, "🐻vs🍯": 8000,
+            "🎹vs🎸": 9000, "🧛vs🧄": 10000, "🦠vs🧼": 11000
+        };
+        // Available Profile Pictures
+        const AVATAR_PRICES = {
+            "👤": 0, "😎": 500, "👑": 1500, "🥷": 2500, "🤖": 5000, "🧙": 8000
+        };
+
+        /* --- FX FUNCTIONS --- */
+        function trigger_ripple(e) {
+            const ripple = document.createElement("div");
+            ripple.className = "ripple-bg";
+            // Center ripple on mouse coordinates
+            ripple.style.left = e.clientX + "px";
+            ripple.style.top = e.clientY + "px";
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 800);
+        }
+
+        function trigger_shake() {
+            document.body.classList.add("shake-effect");
+            // "Buzz" simulation via vibration if supported
+            if (navigator.vibrate) navigator.vibrate(200);
+            setTimeout(() => document.body.classList.remove("shake-effect"), 400);
+        }
+
+        function trigger_coins() {
+            for (let i = 0; i < 30; i++) {
+                const coin = document.createElement("div");
+                coin.className = "coin-particle";
+                coin.innerText = "🪙";
+                coin.style.left = Math.random() * 100 + "vw";
+                coin.style.animationDelay = Math.random() * 0.5 + "s";
+                document.body.appendChild(coin);
+                setTimeout(() => coin.remove(), 2000);
+            }
+        }
+
+        function trigger_confetti() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+            for (let i = 0; i < 100; i++) {
+                const c = document.createElement("div");
+                c.className = "confetti";
+                c.style.left = Math.random() * 100 + "vw";
+                c.style.background = colors[Math.floor(Math.random() * colors.length)];
+                c.style.width = Math.random() * 8 + 5 + "px";
+                c.style.height = c.style.width;
+                c.style.animationDuration = Math.random() * 2 + 1 + "s";
+                c.style.opacity = Math.random();
+                document.body.appendChild(c);
+                setTimeout(() => c.remove(), 3000);
+            }
+        }
+
+        /* --- NOTIFICATION & MODAL LOGIC --- */
+        function show_toast(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerText = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
+        function show_confirm_modal(msg, onYes) {
+            const modal = document.getElementById('custom-confirm');
+            const yesBtn = document.getElementById('confirm-yes');
+            const noBtn = document.getElementById('confirm-no');
+            document.getElementById('confirm-msg').innerText = msg;
+
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+
+            yesBtn.onclick = () => {
+                modal.classList.remove('show');
+                setTimeout(() => modal.style.display = 'none', 300);
+                onYes();
+            };
+            noBtn.onclick = () => {
+                modal.classList.remove('show');
+                setTimeout(() => modal.style.display = 'none', 300);
+            };
+        }
+
+        function update_coin_display(size = null, difficulty = null) {
+            let div = document.getElementById("coin_display");
+            if (!div) {
+                div = document.createElement("div");
+                div.id = "coin_display";
+                div.style.position = "absolute";
+                div.style.top = "20px";
+                div.style.right = "20px";
+                div.style.fontSize = "20px";
+                div.style.fontWeight = "bold";
+                div.style.textAlign = "right";
+                document.body.appendChild(div);
+            }
+            let rewards = "";
+            if (size && difficulty && current_game.mode !== "infinite") {
+                rewards = "\n" + show_rewards(size, difficulty);
+            } else if (size === 'infinite' && difficulty) {
+                rewards = "\n" + show_rewards('infinite', difficulty);
+            }
+            div.innerText = `🪙 ${data.coins}${rewards}`;
+        }
+
+        function load_data() {
+            let raw = localStorage.getItem(DATA_KEY);
+            let data;
+
+            if (!raw) {
+                data = {
+                    coins: 0,
+                    equipped: "XO",
+                    avatar: "👤",
+                    username: "Player",
+                    unlocked_avatars: { "👤": true },
+                    themes: { "XO": true },
+                    scores: {}
+                };
+                for (let size of [3, 4, 5, 'infinite']) {
+                    for (let diff of ["easy", "medium", "hard"]) {
+                        let key = `${size}_${diff}`;
+                        data.scores[key] = { wins: 0, losses: 0, draws: 0 };
+                    }
+                }
+            } else {
+                data = JSON.parse(raw);
+            }
+
+            if (!data.themes) data.themes = { "XO": true };
+            for (let theme in THEME_PRICES) {
+                if (!(theme in data.themes)) {
+                    data.themes[theme] = false;
+                }
+            }
+
+            // Ensure infinite mode scores exist in loaded data
+            if (!data.scores['infinite_easy']) {
+                for (let diff of ["easy", "medium", "hard"]) {
+                    data.scores[`infinite_${diff}`] = { wins: 0, losses: 0, draws: 0 };
+                }
+            }
+
+            if (!data.avatar) data.avatar = "👤";
+            if (!data.username) data.username = "Player";
+            if (!data.unlocked_avatars) data.unlocked_avatars = { "👤": true };
+            data.coins = Infinity
+            save_data(data);
+            return data;
+        }
+
+        function save_data(data) { localStorage.setItem(DATA_KEY, JSON.stringify(data)); }
+        let data = load_data();
+
+        function update_profile_icon() {
+
+            document.getElementById("profile_btn").innerText = data.avatar;
+            document.getElementById("username_display").innerText = data.username;
+        }
+
+        // PROFILE PAGE LOGIC
+        function show_profile() {
+            if (current_game) return;
+            document.getElementById("game").innerHTML = "";
+            let html = `<h3 id='profile_pic'>Profile</h3>
+                <div  id='data_username' style="font-size:50px; margin:10px;">${data.avatar}</div>
+                <div id="input_btn_div">
+                    <input type="text" id="username_input" maxlength="15" value="${data.username}" style="padding:8px; border-radius:5px; border:1px solid var(--accent); background:var(--bg-color); color:white; text-align:center;">
+                    
+                    <button onclick="save_username()">Save Name</button>
+                </div>`;
+            html += `<p id="managing_avatar">Manage your Avatars</p>`;
+
+            for (let av in AVATAR_PRICES) {
+                html += `<div id='avatar_div'><span id='avatar'>${av}</span>`;
+                if (data.avatar === av) html += "<span id='equiped_avatar' >Equipped</span>";
+                else if (data.unlocked_avatars[av]) html += `<button onclick="equip_avatar('${av}')">Use</button>`;
+                else html += `<button onclick="buy_avatar(event, '${av}')">Buy (${AVATAR_PRICES[av]})</button>`;
+                html += "</div>";
+            }
+
+            html += `<button onclick="show_menu()">Back</button>`;
+            document.getElementById("menu").innerHTML = html;
+        }
+
+        function save_username() {
+            let newName = document.getElementById("username_input").value;
+            if (newName.trim() !== "") {
+                if (newName.length > 15) {
+                    show_toast("Username too long!");
+                    return;
+                }
+                data.username = newName;
+                save_data(data);
+                update_profile_icon();
+                show_toast("Name saved smoothly!");
+            }
+        }
+
+        function buy_avatar(e, av) {
+            let price = AVATAR_PRICES[av];
+            if (data.coins >= price) {
+                data.coins -= price;
+                data.unlocked_avatars[av] = true;
+                save_data(data);
+                show_profile();
+                update_coin_display();
+                trigger_ripple(e);
+                show_toast("Avatar purchased!");
+            } else { show_toast("Not enough coins"); }
+        }
+
+        function equip_avatar(av) {
+            data.avatar = av;
+            save_data(data);
+            update_profile_icon();
+            show_profile();
+        }
+
+        function get_symbols() {
+            if (data.equipped === "XO") return { X: "X", O: "O" };
+            let parts = data.equipped.split("vs");
+            return { X: parts[0].trim(), O: parts[1].trim() };
+        }
+
+        function check_winner(board, size) {
+            for (let r = 0; r < size; r++) {
+                let row = board.slice(r * size, (r + 1) * size);
+                if (row[0] !== "" && row.every(v => v === row[0])) return row[0];
+            }
+            for (let c = 0; c < size; c++) {
+                let col = [];
+                for (let r = 0; r < size; r++) col.push(board[r * size + c]);
+                if (col[0] !== "" && col.every(v => v === col[0])) return col[0];
+            }
+            let d1 = []; for (let i = 0; i < size; i++) d1.push(board[i * size + i]);
+            if (d1[0] !== "" && d1.every(v => v === d1[0])) return d1[0];
+            let d2 = []; for (let i = 0; i < size; i++) d2.push(board[i * size + (size - 1 - i)]);
+            if (d2[0] !== "" && d2.every(v => v === d2[0])) return d2[0];
+            return null;
+        }
+
+        function get_empty(board) { return board.map((v, i) => v === "" ? i : null).filter(v => v !== null); }
+        function ai_easy(board) {
+            let empty = get_empty(board);
+            return empty[Math.floor(Math.random() * empty.length)];
+        }
+
+        function ai_medium(board, size, ai, player) {
+            let empty = get_empty(board);
+            for (let m of empty) { board[m] = ai; if (check_winner(board, size) === ai) { board[m] = ""; return m; } board[m] = ""; }
+            for (let m of empty) { board[m] = player; if (check_winner(board, size) === player) { board[m] = ""; return m; } board[m] = ""; }
+            if (size % 2 === 1) { let c = Math.floor((size * size) / 2); if (board[c] === "") return c; }
+            return ai_easy(board);
+        }
+
+        function ai_hard(board, size, ai, player) {
+            if (size === 3) return minimax_root(board, size, ai, player);
+            let empty = get_empty(board);
+            for (let m of empty) { board[m] = ai; if (check_winner(board, size) === ai) { board[m] = ""; return m; } board[m] = ""; }
+            for (let m of empty) { board[m] = player; if (check_winner(board, size) === player) { board[m] = ""; return m; } board[m] = ""; }
+            return minimax_root(board, size, ai, player, 3);
+        }
+
+        function minimax_root(board, size, ai, player, depthLimit = Infinity) {
+            let best = -Infinity; let move = null;
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] === "") {
+                    board[i] = ai;
+                    let score = minimax(board, size, 0, false, -Infinity, Infinity, ai, player, depthLimit);
+                    board[i] = "";
+                    if (score > best) { best = score; move = i; }
+                }
+            }
+            return move;
+        }
+
+        function minimax(board, size, depth, isMax, alpha, beta, ai, player, limit) {
+            let winner = check_winner(board, size);
+            if (winner === ai) return 100 - depth;
+            if (winner === player) return depth - 100;
+            if (!board.includes("")) return 0;
+            if (depth >= limit) return 0;
+            if (isMax) {
+                let best = -Infinity;
+                for (let i = 0; i < board.length; i++) {
+                    if (board[i] === "") {
+                        board[i] = ai;
+                        let val = minimax(board, size, depth + 1, false, alpha, beta, ai, player, limit);
+                        board[i] = ""; best = Math.max(best, val); alpha = Math.max(alpha, val);
+                        if (beta <= alpha) break;
+                    }
+                }
+                return best;
+            } else {
+                let best = Infinity;
+                for (let i = 0; i < board.length; i++) {
+                    if (board[i] === "") {
+                        board[i] = player;
+                        let val = minimax(board, size, depth + 1, true, alpha, beta, ai, player, limit);
+                        board[i] = ""; best = Math.min(best, val); beta = Math.min(beta, val);
+                        if (beta <= alpha) break;
+                    }
+                }
+                return best;
+            }
+        }
+
+        let current_game = null;
+        let socket;
+        try { socket = io(); } catch (e) { console.log('Socket.io not available.'); }
+        let my_online_symbol = '';
+        let online_room = '';
+        let is_online_mode = false;
+        let opponent_profile = null;
+        let online_scores = { me: 0, opp: 0 };
+        let online_game_number = 0;
+        let replay_requested = false;
+
+        if (socket) {
+            socket.on('room_created', (roomId) => {
+                online_room = roomId;
+                document.getElementById("menu").innerHTML = `
+                    <h3 style="color:white; text-shadow: 0 0 5px blue; margin-bottom:20px;">Room Created!</h3>
+                    <div style="background:rgba(255,204,0,0.15); border:2px solid #ffcc00; border-radius:15px; padding:20px; margin-bottom:20px;">
+                        <p style="color:#aaa; font-size:16px; margin-bottom:10px;">Room ID:</p>
+                        <p style="color:#ffcc00; font-size:40px; letter-spacing:8px; text-shadow:0 0 15px rgba(255,204,0,0.5);">${roomId}</p>
+                    </div>
+                    <p style="color:white; font-size:16px;">Share this code with your friend!</p>
+                    <div style="width:40px;height:40px;border:4px solid rgba(255,255,255,0.1);border-top-color:#ffcc00;border-radius:50%;animation:spin 1s linear infinite;margin:20px auto;"></div>
+                    <p style="color:#888; font-size:14px;">Waiting for opponent to join...</p>
+                    <button onclick="leave_online_lobby()">Cancel</button>
+                `;
+            });
+
+            socket.on('error_msg', (msg) => { show_toast(msg); });
+
+            socket.on('game_start_online', (info) => {
+                my_online_symbol = info.symbol;
+                opponent_profile = info.opponent;
+                is_online_mode = true;
+                online_room = info.roomId;
+                online_scores = { me: 0, opp: 0 };
+                online_game_number = info.gameNumber;
+                replay_requested = false;
+                start_game_online(info.settings.mode, info.settings.size, info.starter);
+                show_toast('\uD83D\uDD25 Match started against ' + info.opponent.name + '!');
+            });
+
+            socket.on('move_made', (index) => {
+                if (current_game && !current_game.game_over) { play(index, true); }
+            });
+
+            socket.on('randomizer_event_sync', (board_state) => {
+                if (current_game) {
+                    current_game.board = board_state;
+                    render_game();
+                    show_toast("DRAW: RANDOM TILES CLEARED!");
+                }
+            });
+
+            socket.on('scores_updated', (scores) => {
+                if (is_online_mode) {
+                    online_scores.me = scores[my_online_symbol];
+                    online_scores.opp = scores[my_online_symbol === 'X' ? 'O' : 'X'];
+                    render_game();
+                }
+            });
+
+            socket.on('opponent_wants_replay', () => {
+                show_toast('Opponent wants to play again!');
+                let rs = document.getElementById('replay-status');
+                if (rs) { rs.innerText = '\u2705 Opponent is ready!'; rs.style.display = 'block'; }
+            });
+
+            socket.on('replay_accepted', (info) => {
+                online_game_number = info.gameNumber;
+                online_scores.me = info.scores[my_online_symbol];
+                online_scores.opp = info.scores[my_online_symbol === 'X' ? 'O' : 'X'];
+                replay_requested = false;
+                show_toast('\uD83C\uDFAE Round ' + info.gameNumber + ' - START!');
+                reset_game_online(info.starter);
+            });
+
+            socket.on('player_disconnected', (msg) => {
+                is_online_mode = false;
+                if (current_game) {
+                    current_game.game_over = true;
+                    render_game();
+                    document.getElementById('status').innerText = 'Opponent Disconnected!';
+                    let r = document.getElementById('replay'); if (r) r.style.display = 'none';
+                }
+                show_toast(msg);
+            });
+        }
+
+        function leave_online_lobby() {
+            online_room = ''; is_online_mode = false;
+            show_menu(); change_h1_menu();
+        }
+
+        function start_game_online(mode, size, starter) {
+            if (current_game) return;
+            current_game = {
+                size: size, mode: mode, difficulty: 'pvp_online',
+                board: Array(size * size).fill(''),
+                turn: starter, starting_player: starter, penalty_target: starter,
+                game_over: false, started: false, ai_thinking: false,
+                move_history: { 'X': [], 'O': [] }
+            };
+            render_game();
+        }
+
+        function update_score(size, difficulty, result) {
+            let key = (size === 'infinite') ? `infinite_${difficulty}` : `${size}x${size}_${difficulty}`;
+            if (!data.scores[key]) data.scores[key] = { wins: 0, losses: 0, draws: 0 };
+            data.scores[key][result]++;
+            save_data(data);
+        }
+
+        function calculate_coins(size, difficulty, result) {
+            let table = {
+                3: { easy: [2, 1, 0], medium: [4, 2, 0], hard: [50, 25, -50] },
+                4: { easy: [4, 2, 0], medium: [10, 5, 0], hard: [100, 25, -50] },
+                5: { easy: [10, 5, 0], medium: [25, 10, 0], hard: [250, 100, -50] },
+                infinite: { easy: [10, 0, 0], medium: [25, 0, 0], hard: [200, 0, -50] }
+            };
+            let mode_table = table[size] || table.infinite;
+            let [w, d, l] = mode_table[difficulty];
+            if (result === "wins") return w; if (result === "draws") return d; if (result === "losses") return l;
+            return 0;
+        }
+
+        function show_rewards(size, difficulty) {
+            if (!size || !difficulty) return "";
+            let table = {
+                3: { easy: [2, 1, 0], medium: [4, 2, 0], hard: [50, 25, -50] },
+                4: { easy: [4, 2, 0], medium: [10, 5, 0], hard: [100, 25, -50] },
+                5: { easy: [10, 5, 0], medium: [25, 10, 0], hard: [250, 100, -50] },
+                infinite: { easy: [10, 0, 0], medium: [25, 0, 0], hard: [200, 0, -50] }
+            };
+            let mode_table = table[size] || table.infinite;
+            let [win, draw, loss] = mode_table[difficulty];
+            return `🪙 +${win} / ${draw} / ${loss}`;
+        }
+
+        function show_menu() {
+            update_coin_display();
+            update_profile_icon();
+            if (current_game) return;
+            document.getElementById("game").innerHTML = "";
+            document.getElementById("menu").innerHTML = `
+        <button onclick="play_menu(),change_h1()">Play Local</button>
+        <button onclick="online_menu(),change_h1()" style="border: 2px solid #ffcc00; box-shadow: 0 0 10px #ffcc00;">🔥 Play Online</button>
+        <button onclick="special_modes_choice()">Special Game Modes</button>
+        <button onclick="shop();body_check()">Shop / Locker</button>
+        <button onclick="show_rules()">Rules</button>
+    `;
+        }
+
+        function online_menu() {
+            document.getElementById("menu").innerHTML = `
+        <button onclick="create_room_ui()">\uD83C\uDFAE Host a Game</button>
+        <button onclick="join_room_ui()">\uD83D\uDD17 Join Room By ID</button>
+        <button onclick="show_menu(),change_h1_menu()">Back</button>
+    `;
+        }
+        function create_room_ui() {
+            document.getElementById("menu").innerHTML = `
+        <h3 style="color:white; text-shadow: 0 0 5px blue;">Select Game Mode:</h3>
+        <button onclick="online_choose_size('pvp')">Classic</button>
+        <button onclick="host_room('infinite', 3)">Infinite 3x3</button>
+        <button onclick="online_choose_size('randomizer')">Randomizer</button>
+        <button onclick="online_menu()">Back</button>
+    `;
+        }
+        function online_choose_size(mode) {
+            let html = `<h3 style="color:white; text-shadow: 0 0 5px blue;">Select Grid Size:</h3>`;
+            for (let size of [3, 4, 5]) {
+                html += `<button onclick="host_room('${mode}', ${size})">${size}x${size}</button>`;
+            }
+            html += `<button onclick="create_room_ui()">Back</button>`;
+            document.getElementById("menu").innerHTML = html;
+        }
+        function host_room(mode, size) {
+            if (!socket) { show_toast('Not connected to server! Open via http://localhost:3000'); return; }
+            socket.emit('create_room', {
+                profile: { name: data.username, avatar: data.avatar, theme: data.equipped },
+                settings: { mode, size }
+            });
+            document.getElementById("menu").innerHTML = `<h3 style="color:white;">Creating room...</h3>`;
+        }
+        function join_room_ui() {
+            document.getElementById("menu").innerHTML = `
+        <h3 style="color:white; text-shadow: 0 0 5px blue;">Enter Room ID:</h3>
+        <input type="text" id="room_id_input" maxlength="5"
+            style="font-family:'Orbitron',sans-serif; font-size:30px; text-transform:uppercase; text-align:center; width:220px; padding:12px; background:var(--cell-bg); color:#ffcc00; border:2px solid #ffcc00; border-radius:12px; letter-spacing:6px; margin-bottom:20px;">
+        <br>
+        <button onclick="join_room_action()">Join Game</button>
+        <button onclick="online_menu()">Back</button>
+    `;
+            setTimeout(() => { let el = document.getElementById('room_id_input'); if (el) el.focus(); }, 100);
+        }
+        function join_room_action() {
+            if (!socket) { show_toast('Not connected to server!'); return; }
+            const id = document.getElementById('room_id_input').value.trim().toUpperCase();
+            if (!id || id.length < 3) { show_toast('Please enter a valid Room ID!'); return; }
+            socket.emit('join_room', {
+                roomId: id,
+                profile: { name: data.username, avatar: data.avatar, theme: data.equipped }
+            });
+            show_toast('Joining room ' + id + '...');
+        }
+
+        function special_modes_choice() {
+            document.getElementById("menu").innerHTML = `
+        <button onclick="infinite_tictactoe_page()">Infinite TicTacToe</button>
+        <button onclick="randomizer_page()">TicTacToe Randomizer</button>
+        <button onclick="show_menu(),change_h1_menu()">Back</button>
+    `;
+        }
+
+        function randomizer_page() {
+            document.getElementById("menu").innerHTML = `
+        <button onclick="start_game('randomizer', 3, 'pvp')">3x3</button>
+        <button onclick="start_game('randomizer', 4, 'pvp')">4x4</button>
+        <button onclick="start_game('randomizer', 5, 'pvp')">5x5</button>
+        <button onclick="special_modes_choice()">Back</button>
+    `;
+        }
+
+        function infinite_tictactoe_page() {
+            document.getElementById("menu").innerHTML = `
+        <button onclick="infinite_tictactoe_menu('pvp')">PvP</button>
+        <button onclick="special_modes_diff_menu()">PvE</button>
+        <button onclick="special_modes_choice()">Back</button>
+    `;
+        }
+
+        function special_modes_diff_menu() {
+            let html = `
+        <button onclick="infinite_tictactoe_menu('easy')">Easy</button>
+        <button onclick="infinite_tictactoe_menu('medium')">Medium</button>`;
+            if (data.coins >= 50) html += `<button onclick="infinite_tictactoe_menu('hard')">Hard (50 coins)</button>`;
+            else html += `<div id='hard_mode'>🔒Hard Locked (need 50 coins)</div>`;
+            html += `<button onclick="infinite_tictactoe_page()">Back</button>`;
+            document.getElementById("menu").innerHTML = html;
+        }
+
+        function infinite_tictactoe_menu(diff) {
+            start_game('infinite', 3, diff);
+        }
+
+        function show_rules() {
+            document.getElementById("menu").innerHTML = "";
+            let html = `
+        <div id="rules_div" class="rules-container">
+            <h2 style="color:white; text-shadow: 0 0 10px blue;">GAME MANUAL</h2>
+            
+            <div class="rule-card">
+                <h4>Grid Objectives</h4>
+                <ul>
+                    <li><strong>3x3 Grid:</strong> Align 3 symbols horizontally, vertically, or diagonally.</li>
+                    <li><strong>4x4 Grid:</strong> Align 4 symbols to claim victory.</li>
+                    <li><strong>5x5 Grid:</strong> Align 5 symbols for the ultimate win.</li>
+                </ul>
+            </div>
+
+            <div class="rule-card" style="border-left-color: #ff2121;">
+                <h4>Infinite Mode</h4>
+                <ul>
+                    <li>Placing your 4th piece removes your 1st piece.</li>
+                    <li>Pieces about to vanish will turn grey.</li>
+                    <li>Symbols only grey out during your turn.</li>
+                </ul>
+            </div>
+
+            <div class="rule-card" style="border-left-color: #00ff00;">
+                <h4>Randomizer Mode</h4>
+                <ul>
+                    <li>On a Draw, random tiles are cleared.</li>
+                    <li>3x3: 3 tiles (2 from starter, 1 from other).</li>
+                    <li>4x4: 4 tiles (2 of each).</li>
+                    <li>5x5: 5 tiles (3 from starter, 2 from other).</li>
+                    <li>On consecutive draws, the penalty swithces players.</li>
+                </ul>
+            </div>
+
+            <button class="rules-back-btn" onclick="show_menu(),change_h1_menu()">Back to Menu</button>
+        </div>`;
+            document.getElementById("game").innerHTML = html;
+        }
+        function play_menu() {
+            document.getElementById("menu").innerHTML = `
+        <button onclick="choose_grid('pvp')">Challenge your Friend</button>
+        <button onclick="choose_grid('pve')">AI Challenge</button>
+        <button onclick="show_menu(),change_h1_menu()">Menu</button>
+    `;
+        }
+
+        function choose_grid(mode) {
+            let html = "";
+            for (let size of [3, 4, 5]) html += `<button onclick="choose_difficulty('${mode}',${size})">${size}x${size}</button>`;
+            html += `<button onclick="show_menu(),change_h1_menu()">Menu</button>`;
+            document.getElementById("menu").innerHTML = html;
+        }
+
+        function choose_difficulty(mode, size) {
+            if (mode === "pvp") { start_game(mode, size, null); return; }
+            let html = `<button onclick="start_game('pve',${size},'easy')">Easy</button>
+              <button onclick="start_game('pve',${size},'medium')">Medium</button>`;
+            if (data.coins >= 50) html += `<button onclick="start_game('pve',${size},'hard')">Hard</button>`;
+            else html += `<div id='hard_mode'>🔒Hard Locked (need 50 coins)</div>`;
+            html += `<button onclick="show_menu(),change_h1_menu()">Menu</button>`;
+            document.getElementById("menu").innerHTML = html;
+        }
+
+        function start_game(mode, size, difficulty) {
+            if (current_game) return;
+            let starter = Math.random() < 0.5 ? "X" : "O";
+            current_game = {
+                size: size,
+                mode: mode,
+                difficulty: difficulty,
+                board: Array(size * size).fill(""),
+                turn: starter,
+                starting_player: starter,
+                penalty_target: starter,
+                game_over: false,
+                started: false,
+                ai_thinking: false,
+                move_history: { "X": [], "O": [] }
+            };
+            render_game();
+            if ((mode === "pve" || mode === "infinite") && current_game.difficulty !== "pvp" && current_game.turn === "O") {
+                current_game.ai_thinking = true;
+                setTimeout(ai_move, 400);
+            }
+        }
+
+        function render_game() {
+            let g = current_game;
+            let symbols = get_symbols();
+            let score_html = "";
+            let online_bar = "";
+
+            if (is_online_mode) {
+                update_coin_display();
+                let oppName = opponent_profile ? opponent_profile.name : 'Opponent';
+                let oppAvatar = opponent_profile ? opponent_profile.avatar : '\u{1F464}';
+                let modeName = g.mode === 'infinite' ? 'Infinite' : g.mode === 'randomizer' ? 'Randomizer' : 'Classic';
+                online_bar = `
+                    <div class="online-scorebar">
+                        <div class="os-player os-me">
+                            <span class="os-avatar">${data.avatar}</span>
+                            <span class="os-name">${data.username}</span>
+                            <span class="os-pts">${online_scores.me} pts</span>
+                        </div>
+                        <div class="os-center">
+                            <span class="os-vs">VS</span>
+                            <span class="os-round">Round ${online_game_number} \u2022 ${modeName} ${g.size}x${g.size}</span>
+                        </div>
+                        <div class="os-player os-opp">
+                            <span class="os-pts">${online_scores.opp} pts</span>
+                            <span class="os-name">${oppName}</span>
+                            <span class="os-avatar">${oppAvatar}</span>
+                        </div>
+                    </div>`;
+            } else if (g.mode === "pve" || (g.mode === "infinite" && g.difficulty !== "pvp")) {
+                update_coin_display(g.mode === "infinite" ? 'infinite' : g.size, g.difficulty);
+                let key = (g.mode === 'infinite') ? `infinite_${g.difficulty}` : `${g.size}x${g.size}_${g.difficulty}`;
+                let sc = data.scores[key] || { wins: 0, losses: 0, draws: 0 };
+                score_html = `<div id="score">Score - Wins:${sc.wins} Losses:${sc.losses} Draws:${sc.draws}</div>`;
+            } else { update_coin_display(); }
+
+            document.getElementById("menu").innerHTML = "";
+
+            let turnText = is_online_mode
+                ? (g.turn === my_online_symbol ? 'Your Turn' : "Opponent's Turn")
+                : `Current move: ${symbols[g.turn]}`;
+            if (g.mode === 'randomizer') turnText += ' (Randomizer)';
+
+            let replayBtn = is_online_mode
+                ? `<button id="replay" style="display:none;" onclick="request_online_replay()">Play Again?</button><div id="replay-status" style="display:none; color:#ffcc00; font-size:16px; margin:10px 0;"></div>`
+                : `<button id="replay" style="display:none;" onclick="reset_game()">Replay</button>`;
+            let leaveBtn = is_online_mode
+                ? `<button onclick="confirm_leave_online()">Leave Room</button>`
+                : `<button onclick="confirm_leave()">Menu</button>`;
+
+            document.getElementById("game").innerHTML = `
+        ${online_bar}
+        ${score_html}
+        <div id="status">${turnText}</div>
+        <div id="grid" class="grid" style="grid-template-columns:repeat(${g.size}, auto)"></div>
+        ${replayBtn}
+        ${leaveBtn}
+    `;
+
+            let grid = document.getElementById("grid");
+            for (let i = 0; i < g.board.length; i++) {
+                let b = document.createElement("button");
+                b.className = "cell";
+                let symbolContent = g.board[i] ? symbols[g.board[i]] : "";
+                b.innerHTML = `<span>${symbolContent}</span>`;
+                if (!g.game_over && g.mode === "infinite" && g.board[i] !== "") {
+                    let hist = g.move_history[g.board[i]];
+                    if (hist.length === 3 && hist[0] === i && g.turn === g.board[i]) {
+                        b.classList.add("fading");
+                    }
+                }
+                b.onclick = () => play(i);
+                grid.appendChild(b);
+            }
+        }
+
+        function play(i, from_network = false) {
+            let g = current_game;
+            if (g.board[i] !== "" || g.game_over || g.ai_thinking) return;
+
+            if (is_online_mode && !from_network) {
+                if (g.turn !== my_online_symbol) {
+                    show_toast("It's not your turn!");
+                    return;
+                }
+                socket.emit('make_move', { roomId: online_room, index: i });
+            }
+
+            g.started = true;
+
+            if (g.mode === "infinite") {
+                let hist = g.move_history[g.turn];
+                if (hist.length === 3) {
+                    let first_move = hist.shift();
+                    g.board[first_move] = "";
+                }
+                hist.push(i);
+            }
+
+            g.board[i] = g.turn;
+            if (end_check()) return;
+            g.turn = g.turn === "X" ? "O" : "X"; render_game();
+
+            let is_ai_turn = !is_online_mode && (g.mode === "pve" || (g.mode === "infinite" && g.difficulty !== "pvp"));
+            if (is_ai_turn && g.turn === "O") { g.ai_thinking = true; setTimeout(ai_move, 400); }
+        }
+
+        function ai_move() {
+            let g = current_game;
+            if (g.game_over) { g.ai_thinking = false; return; }
+            let move;
+            if (g.difficulty === "easy") move = ai_easy(g.board);
+            else if (g.difficulty === "medium") move = ai_medium(g.board, g.size, "O", "X");
+            else move = ai_hard(g.board, g.size, "O", "X");
+
+            // Use play logic to handle infinite shift
+            g.ai_thinking = false;
+            play(move);
+        }
+
+        function end_check() {
+            let g = current_game;
+            let winner = check_winner(g.board, g.size);
+            if (winner) {
+                g.game_over = true;
+                if (is_online_mode) {
+                    socket.emit('game_ended', { roomId: online_room, winner: winner });
+                    if (winner === my_online_symbol) { online_scores.me += 1; trigger_confetti(); trigger_coins(); }
+                    else { online_scores.opp += 1; trigger_shake(); }
+                } else if (g.mode === "pvp" || g.difficulty === "pvp") {
+                    trigger_confetti();
+                } else {
+                    let result = winner === "X" ? "wins" : "losses";
+                    if (result === "wins") { trigger_coins(); } else { trigger_shake(); }
+                    update_score(g.mode === "infinite" || g.mode === "randomizer" ? g.mode : g.size, g.difficulty, result);
+                    data.coins += calculate_coins(g.mode === "infinite" || g.mode === "randomizer" ? g.mode : g.size, g.difficulty, result);
+                    save_data(data); update_coin_display();
+                }
+                render_game();
+                if (is_online_mode) {
+                    document.getElementById("status").innerText = winner === my_online_symbol ? 'You Win! \uD83C\uDF89' : 'You Lose!';
+                } else {
+                    let symbols = get_symbols();
+                    document.getElementById("status").innerText = `${symbols[winner]} Wins!`;
+                }
+                document.getElementById("replay").style.display = "inline-block";
+                return true;
+            }
+            if (!g.board.includes("") && g.mode !== "infinite") {
+                if (g.mode === 'randomizer') { handle_randomizer_draw(); return false; }
+                g.game_over = true;
+                if (is_online_mode) {
+                    socket.emit('game_ended', { roomId: online_room, winner: 'draw' });
+                    online_scores.me += 0.5; online_scores.opp += 0.5;
+                } else if (g.mode === "pve" || (g.mode === "infinite" && g.difficulty !== "pvp")) {
+                    update_score(g.mode === "infinite" ? 'infinite' : g.size, g.difficulty, "draws");
+                    data.coins += calculate_coins(g.mode === "pve" ? g.size : 'infinite', g.difficulty, "draws");
+                    save_data(data); update_coin_display();
+                }
+                render_game();
+                document.getElementById("status").innerText = "Draw!";
+                document.getElementById("replay").style.display = "inline-block";
+                return true;
+            }
+            return false;
+        }
+
+        function handle_randomizer_draw() {
+            let g = current_game;
+            let other = g.penalty_target === "X" ? "O" : "X";
+            let target_count, other_count;
+
+            if (g.size === 3) { target_count = 2; other_count = 1; }
+            else if (g.size === 4) { target_count = 2; other_count = 2; }
+            else { target_count = 3; other_count = 2; }
+
+            function clear_random(symbol, count) {
+                let indices = [];
+                for (let i = 0; i < g.board.length; i++) if (g.board[i] === symbol) indices.push(i);
+                for (let c = 0; c < count; c++) {
+                    if (indices.length === 0) break;
+                    let rand_idx = Math.floor(Math.random() * indices.length);
+                    g.board[indices[rand_idx]] = "";
+                    indices.splice(rand_idx, 1);
+                }
+            }
+
+            clear_random(g.penalty_target, target_count);
+            clear_random(other, other_count);
+
+            g.penalty_target = other;
+
+            // Smooth Message for Randomizer Draw
+            show_toast("DRAW: RANDOM TILES CLEARED!");
+            render_game();
+
+            if (is_online_mode && g.turn === my_online_symbol) {
+                socket.emit('randomizer_sync', { roomId: online_room, board: g.board });
+            }
+        }
+
+        function confirm_leave() {
+            let g = current_game;
+            let is_paid_mode = (g.mode === "pve" || g.mode === "infinite") && g.difficulty !== "pvp";
+            if (!g.game_over && g.started && is_paid_mode) {
+                show_confirm_modal("Leaving now counts as a loss. Are you sure?", () => {
+                    update_score(g.mode === "infinite" ? 'infinite' : g.size, g.difficulty, "losses");
+                    data.coins += calculate_coins(g.mode === "pve" ? g.size : 'infinite', g.difficulty, "losses");
+                    save_data(data);
+                    update_coin_display();
+                    current_game = null;
+                    show_menu();
+                    change_h1_menu();
+                });
+            } else {
+                current_game = null;
+                show_menu();
+                change_h1_menu();
+            }
+        }
+
+        function reset_game() {
+            let g = current_game;
+            let starter = Math.random() < 0.5 ? "X" : "O";
+            g.board = Array(g.size * g.size).fill("");
+            g.turn = starter;
+            g.starting_player = starter;
+            g.penalty_target = starter;
+            g.game_over = false;
+            g.started = false;
+            g.ai_thinking = false;
+            g.move_history = { "X": [], "O": [] };
+            render_game();
+
+            let is_ai_turn = (g.mode === "pve" || (g.mode === "infinite" && g.difficulty !== "pvp"));
+            if (is_ai_turn && g.turn === "O") {
+                g.ai_thinking = true;
+                setTimeout(ai_move, 400);
+            }
+        }
+
+        function request_online_replay() {
+            if (replay_requested) return;
+            replay_requested = true;
+            socket.emit('request_replay', { roomId: online_room });
+            let btn = document.getElementById('replay');
+            if (btn) { btn.innerText = 'Waiting for opponent...'; btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none'; }
+            let rs = document.getElementById('replay-status');
+            if (rs) { rs.innerText = '\u2705 You are ready!'; rs.style.display = 'block'; }
+            show_toast('Waiting for opponent to accept...');
+        }
+
+        function reset_game_online(starter) {
+            let g = current_game;
+            g.board = Array(g.size * g.size).fill('');
+            g.turn = starter;
+            g.starting_player = starter;
+            g.penalty_target = starter;
+            g.game_over = false;
+            g.started = false;
+            g.ai_thinking = false;
+            g.move_history = { 'X': [], 'O': [] };
+            replay_requested = false;
+            render_game();
+        }
+
+        function confirm_leave_online() {
+            show_confirm_modal('Leave the online room?', () => {
+                is_online_mode = false;
+                online_room = '';
+                current_game = null;
+                if (socket) { socket.disconnect(); socket.connect(); }
+                show_menu();
+                change_h1_menu();
+            });
+        }
+
+        function shop() {
+            update_coin_display();
+            let html = "<h3 id='locker'>Locker</h3>";
+            let themesArray = [...Object.keys(THEME_PRICES)];
+            for (let theme of themesArray) {
+                html += `<div id="themes">`;
+
+                html += `<span id='themes_logos'>${theme}</span>`;
+                if (data.equipped === theme) html += "<span id='equip_span'>Equipped</span>";
+                else if (data.themes[theme]) html += `<button id="equip_btn"  onclick="equip('${theme}')">Equip</button>`;
+                else html += `<button id='buy_btn' onclick="buy(event, '${theme}')">Buy (${THEME_PRICES[theme]})</button>`;
+                html += "</div>";
+            }
+            html += `<button onclick="show_menu()">Menu</button>`;
+            document.getElementById("menu").innerHTML = html;
+        }
+
+        function buy(e, theme) {
+            let price = THEME_PRICES[theme] || 100;
+            if (data.coins >= price) {
+                data.coins -= price;
+                data.themes[theme] = true;
+                save_data(data);
+                shop();
+                update_coin_display();
+                trigger_ripple(e);
+                show_toast("Purchase successful!");
+            }
+            else { show_toast("Not enough coins"); }
+        }
+
+        function equip(theme) { data.equipped = theme; save_data(data); shop(); show_toast("Theme equipped!"); }
+        function body_check() {
+            const themeElement = document.getElementById('themes');
+
+            if (document.body.contains(themeElement)) {
+                document.body.style.display = "flex";
+            }
+            else {
+                console.log("The themes card is NOT in the body.");
+            }
+        }
+        var title = document.getElementById("h1");
+        function change_h1() {
+            title.innerHTML = "Choose your opponent";
+
+        }
+        function change_h1_menu() {
+            title.innerHTML = "Tic Tac Toe Ultimate";
+        }
+
+        show_menu();
+    </script>
+</body>
+
+</html>
