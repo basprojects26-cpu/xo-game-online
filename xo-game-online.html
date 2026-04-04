@@ -210,8 +210,9 @@
 
             padding: 30px;
             border-radius: 20px;
-
-            max-width: 500px;
+            
+            /* Increased max-width to fit the Super Tic-Tac-Toe grid */
+            max-width: 600px;
             width: 90%;
             transition: all 0.3s ease;
         }
@@ -281,14 +282,13 @@
 
         /* Super Tic-Tac-Toe Styling */
         .super-grid {
-            margin-top: 70px !important;
-            display: grid;
+            margin: 70px auto 25px auto !important;
+            display: inline-grid; 
             grid-template-columns: repeat(3, auto);
-            gap: 10px; /* Gap between big squares */
-            margin: 25px auto;
+            gap: 12px;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
             border-radius: 12px;
             box-shadow: 0 0 15px rgba(0, 100, 255, 0.3);
         }
@@ -1944,7 +1944,13 @@
         function reset_game() {
             let g = current_game;
             let starter = Math.random() < 0.5 ? "X" : "O";
-            g.board = Array(g.size * g.size).fill("");
+            let boardSize = g.mode === 'super' ? 81 : g.size * g.size;
+            g.board = Array(boardSize).fill("");
+            if (g.mode === 'super') {
+                g.big_board = Array(9).fill('');
+                g.next_big_square = null;
+                g.small_wins = { 'X': 0, 'O': 0 };
+            }
             g.turn = starter;
             g.starting_player = starter;
             g.penalty_target = starter;
@@ -1974,7 +1980,13 @@
 
         function reset_game_online(starter) {
             let g = current_game;
-            g.board = Array(g.size * g.size).fill('');
+            let boardSize = g.mode === 'super' ? 81 : g.size * g.size;
+            g.board = Array(boardSize).fill("");
+            if (g.mode === 'super') {
+                g.big_board = Array(9).fill('');
+                g.next_big_square = null;
+                g.small_wins = { 'X': 0, 'O': 0 };
+            }
             g.turn = starter;
             g.starting_player = starter;
             g.penalty_target = starter;
