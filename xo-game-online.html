@@ -279,6 +279,73 @@
             transition: opacity 0.3s ease;
         }
 
+        /* Super Tic-Tac-Toe Styling */
+        .super-grid {
+            margin-top: 70px !important;
+            display: grid;
+            grid-template-columns: repeat(3, auto);
+            gap: 10px; /* Gap between big squares */
+            margin: 25px auto;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0, 100, 255, 0.3);
+        }
+
+        .big-cell {
+            display: grid;
+            grid-template-columns: repeat(3, auto);
+            gap: 2px;
+            background: var(--bg-color);
+            border-radius: 8px;
+            padding: 2px;
+            position: relative;
+        }
+
+        .big-cell.highlight {
+            box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.5), 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .super-cell {
+            width: 45px;
+            height: 45px;
+            font-size: 22px;
+            background: var(--cell-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .super-cell:hover:not(:disabled) {
+            background: #1a4a80;
+        }
+
+        .big-cell-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--cell-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 100px;
+            font-weight: bold;
+            border-radius: 8px;
+            z-index: 10;
+        }
+
+        .big-cell-overlay.draw {
+            background: #555;
+            font-size: 40px;
+        }
+
         /* Shop Items */
         #menu div:not(.spinner-ring) {
             background: rgba(255, 255, 255, 0.05);
@@ -1071,17 +1138,17 @@
         function check_winner(board, size) {
             for (let r = 0; r < size; r++) {
                 let row = board.slice(r * size, (r + 1) * size);
-                if (row[0] !== "" && row.every(v => v === row[0])) return row[0];
+                if (row[0] !== "" && row[0] !== "draw" && row.every(v => v === row[0])) return row[0];
             }
             for (let c = 0; c < size; c++) {
                 let col = [];
                 for (let r = 0; r < size; r++) col.push(board[r * size + c]);
-                if (col[0] !== "" && col.every(v => v === col[0])) return col[0];
+                if (col[0] !== "" && col[0] !== "draw" && col.every(v => v === col[0])) return col[0];
             }
             let d1 = []; for (let i = 0; i < size; i++) d1.push(board[i * size + i]);
-            if (d1[0] !== "" && d1.every(v => v === d1[0])) return d1[0];
+            if (d1[0] !== "" && d1[0] !== "draw" && d1.every(v => v === d1[0])) return d1[0];
             let d2 = []; for (let i = 0; i < size; i++) d2.push(board[i * size + (size - 1 - i)]);
-            if (d2[0] !== "" && d2.every(v => v === d2[0])) return d2[0];
+            if (d2[0] !== "" && d2[0] !== "draw" && d2.every(v => v === d2[0])) return d2[0];
             return null;
         }
 
@@ -1295,9 +1362,13 @@
 
         function start_game_online(mode, size, starter) {
             if (current_game) return;
+            let boardSize = mode === 'super' ? 81 : size * size;
             current_game = {
                 size: size, mode: mode, difficulty: 'pvp_online',
-                board: Array(size * size).fill(''),
+                board: Array(boardSize).fill(''),
+                big_board: mode === 'super' ? Array(9).fill('') : null,
+                next_big_square: null,
+                small_wins: mode === 'super' ? { 'X': 0, 'O': 0 } : null,
                 turn: starter, starting_player: starter, penalty_target: starter,
                 game_over: false, started: false, ai_thinking: false,
                 move_history: { 'X': [], 'O': [] }
@@ -1365,6 +1436,7 @@
         <button onclick="online_choose_size('pvp')">Classic</button>
         <button onclick="host_room('infinite', 3)">Infinite 3x3</button>
         <button onclick="online_choose_size('randomizer')">Randomizer</button>
+        <button onclick="host_room('super', 9)" style="border-color:#00d4ff;">Super Tic-Tac-Toe</button>
         <button onclick="online_menu()">Back</button>
     `;
         }
@@ -1410,6 +1482,7 @@
             document.getElementById("menu").innerHTML = `
         <button onclick="infinite_tictactoe_page()">Infinite TicTacToe</button>
         <button onclick="randomizer_page()">TicTacToe Randomizer</button>
+        <button onclick="start_game('super', 9, 'pvp')" style="border-color:#00d4ff; box-shadow:0 0 8px #00d4ff;">Super Tic-Tac-Toe</button>
         <button onclick="show_menu(),change_h1_menu()">Back</button>
     `;
         }
@@ -1480,6 +1553,16 @@
                 </ul>
             </div>
 
+            <div class="rule-card" style="border-left-color: #00d4ff;">
+                <h4>Super Tic-Tac-Toe</h4>
+                <ul>
+                    <li>A 3x3 grid where each cell contains another 3x3 grid.</li>
+                    <li>Your move determines which big square the opponent MUST play in.</li>
+                    <li>Win a small grid to claim the big square!</li>
+                    <li>If forced into a won/drawn square, you can play ANYWHERE.</li>
+                </ul>
+            </div>
+
             <button class="rules-back-btn" onclick="show_menu(),change_h1_menu()">Back to Menu</button>
         </div>`;
             document.getElementById("game").innerHTML = html;
@@ -1512,11 +1595,15 @@
         function start_game(mode, size, difficulty) {
             if (current_game) return;
             let starter = Math.random() < 0.5 ? "X" : "O";
+            let boardSize = mode === 'super' ? 81 : size * size;
             current_game = {
                 size: size,
                 mode: mode,
                 difficulty: difficulty,
-                board: Array(size * size).fill(""),
+                board: Array(boardSize).fill(""),
+                big_board: mode === 'super' ? Array(9).fill('') : null,
+                next_big_square: null,
+                small_wins: mode === 'super' ? { 'X': 0, 'O': 0 } : null,
                 turn: starter,
                 starting_player: starter,
                 penalty_target: starter,
@@ -1542,7 +1629,7 @@
                 update_coin_display();
                 let oppName = opponent_profile ? opponent_profile.name : 'Opponent';
                 let oppAvatar = opponent_profile ? opponent_profile.avatar : '\u{1F464}';
-                let modeName = g.mode === 'infinite' ? 'Infinite' : g.mode === 'randomizer' ? 'Randomizer' : 'Classic';
+                let modeName = g.mode === 'infinite' ? 'Infinite' : g.mode === 'randomizer' ? 'Randomizer' : g.mode === 'super' ? 'Super' : 'Classic';
                 online_bar = `
                     <div class="online-scorebar">
                         <div class="os-player os-me">
@@ -1599,7 +1686,50 @@
                 ? `<button onclick="confirm_leave_online()">Leave Room</button>`
                 : `<button onclick="confirm_leave()">Menu</button>`;
 
-            document.getElementById("game").innerHTML = `
+            if (g.mode === 'super') {
+                document.getElementById("game").innerHTML = `
+        ${online_bar}
+        ${score_html}
+        <div id="status">${turnText}</div>
+        <div id="grid" class="super-grid"></div>
+        ${replayBtn}
+        ${leaveBtn}
+    `;
+                let grid = document.getElementById("grid");
+                for (let big_idx = 0; big_idx < 9; big_idx++) {
+                    let bigCell = document.createElement("div");
+                    bigCell.className = "big-cell";
+                    
+                    if (!g.game_over && (g.next_big_square === null || g.next_big_square === big_idx) && g.big_board[big_idx] === "") {
+                        bigCell.classList.add("highlight");
+                    }
+
+                    for (let small_idx = 0; small_idx < 9; small_idx++) {
+                        let i = big_idx * 9 + small_idx;
+                        let b = document.createElement("button");
+                        b.className = "super-cell";
+                        let symbolContent = g.board[i] ? symbols[g.board[i]] : "";
+                        b.innerHTML = `<span>${symbolContent}</span>`;
+                        b.onclick = () => play(i);
+                        bigCell.appendChild(b);
+                    }
+
+                    if (g.big_board[big_idx] !== "") {
+                        let overlay = document.createElement("div");
+                        overlay.className = "big-cell-overlay";
+                        if (g.big_board[big_idx] === "draw") {
+                            overlay.classList.add("draw");
+                            overlay.innerText = "Blocked";
+                        } else {
+                            overlay.innerText = symbols[g.big_board[big_idx]];
+                        }
+                        bigCell.appendChild(overlay);
+                    }
+
+                    grid.appendChild(bigCell);
+                }
+            } else {
+                document.getElementById("game").innerHTML = `
         ${online_bar}
         ${score_html}
         <div id="status">${turnText}</div>
@@ -1607,27 +1737,36 @@
         ${replayBtn}
         ${leaveBtn}
     `;
-
-            let grid = document.getElementById("grid");
-            for (let i = 0; i < g.board.length; i++) {
-                let b = document.createElement("button");
-                b.className = "cell";
-                let symbolContent = g.board[i] ? symbols[g.board[i]] : "";
-                b.innerHTML = `<span>${symbolContent}</span>`;
-                if (!g.game_over && g.mode === "infinite" && g.board[i] !== "") {
-                    let hist = g.move_history[g.board[i]];
-                    if (hist.length === 3 && hist[0] === i && g.turn === g.board[i]) {
-                        b.classList.add("fading");
+                let grid = document.getElementById("grid");
+                for (let i = 0; i < g.board.length; i++) {
+                    let b = document.createElement("button");
+                    b.className = "cell";
+                    let symbolContent = g.board[i] ? symbols[g.board[i]] : "";
+                    b.innerHTML = `<span>${symbolContent}</span>`;
+                    if (!g.game_over && g.mode === "infinite" && g.board[i] !== "") {
+                        let hist = g.move_history[g.board[i]];
+                        if (hist.length === 3 && hist[0] === i && g.turn === g.board[i]) {
+                            b.classList.add("fading");
+                        }
                     }
+                    b.onclick = () => play(i);
+                    grid.appendChild(b);
                 }
-                b.onclick = () => play(i);
-                grid.appendChild(b);
             }
         }
 
         function play(i, from_network = false) {
             let g = current_game;
             if (g.board[i] !== "" || g.game_over || g.ai_thinking) return;
+
+            if (g.mode === 'super') {
+                let big_idx = Math.floor(i / 9);
+                if (g.big_board[big_idx] !== "") return;
+                if (!from_network && g.next_big_square !== null && g.next_big_square !== big_idx) {
+                    show_toast("You must play in the highlighted grid!");
+                    return;
+                }
+            }
 
             if (is_online_mode && !from_network) {
                 if (g.turn !== my_online_symbol) {
@@ -1649,6 +1788,27 @@
             }
 
             g.board[i] = g.turn;
+
+            if (g.mode === 'super') {
+                let big_idx = Math.floor(i / 9);
+                let small_board = g.board.slice(big_idx * 9, big_idx * 9 + 9);
+                let small_winner = check_winner(small_board, 3);
+                
+                if (small_winner) {
+                    g.big_board[big_idx] = small_winner;
+                    g.small_wins[small_winner]++;
+                } else if (!small_board.includes("")) {
+                    g.big_board[big_idx] = "draw";
+                }
+
+                let next_idx = i % 9;
+                if (g.big_board[next_idx] !== "") {
+                    g.next_big_square = null;
+                } else {
+                    g.next_big_square = next_idx;
+                }
+            }
+
             if (end_check()) return;
             g.turn = g.turn === "X" ? "O" : "X"; render_game();
 
@@ -1671,8 +1831,19 @@
 
         function end_check() {
             let g = current_game;
-            let winner = check_winner(g.board, g.size);
-            if (winner) {
+            let winner = null;
+            if (g.mode === 'super') {
+                winner = check_winner(g.big_board, 3);
+                if (!winner && !g.big_board.includes("")) {
+                    if (g.small_wins['X'] > g.small_wins['O']) winner = 'X';
+                    else if (g.small_wins['O'] > g.small_wins['X']) winner = 'O';
+                    else winner = 'draw';
+                }
+            } else {
+                winner = check_winner(g.board, g.size);
+            }
+
+            if (winner && winner !== 'draw') {
                 g.game_over = true;
                 if (is_online_mode) {
                     socket.emit('game_ended', { roomId: online_room, winner: winner });
@@ -1697,7 +1868,7 @@
                 document.getElementById("replay").style.display = "inline-block";
                 return true;
             }
-            if (!g.board.includes("") && g.mode !== "infinite") {
+            if ((!g.board.includes("") && g.mode !== "infinite" && g.mode !== "super") || winner === 'draw') {
                 if (g.mode === 'randomizer') { handle_randomizer_draw(); return false; }
                 g.game_over = true;
                 if (is_online_mode) {
