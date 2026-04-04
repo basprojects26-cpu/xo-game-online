@@ -11,16 +11,94 @@ app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'xo-game-online.html')));
 
 const rooms = {};
-const onlinePlayers = {}; // playerId -> socketId
+const onlinePlayers = {};       // playerId -> socketId
+const playerProfiles = {};      // playerId -> { name, avatar }
+const playerDND = {};           // playerId -> boolean
+const pendingFriendRequests = {}; // targetPlayerId -> [{ fromId, fromProfile, timestamp }]
 
 function genId() { return Math.random().toString(36).substring(2, 7).toUpperCase(); }
 
 io.on('connection', (socket) => {
     let registeredPlayerId = null;
 
-    socket.on('register_player', (playerId) => {
-        registeredPlayerId = playerId;
-        onlinePlayers[playerId] = socket.id;
+    socket.on('register_player', (data) => {
+        registeredPlayerId = typeof data === 'string' ? data : data.playerId;
+        onlinePlayers[registeredPlayerId] = socket.id;
+        if (data.profile) {
+            playerProfiles[registeredPlayerId] = data.profile;
+        }
+        // Send any pending friend requests to this player
+        if (pendingFriendRequests[registeredPlayerId] && pendingFriendRequests[registeredPlayerId].length > 0) {
+            socket.emit('pending_friend_requests', pendingFriendRequests[registeredPlayerId]);
+        }
+    });
+
+    socket.on('update_profile', (profile) => {
+        if (registeredPlayerId) {
+            playerProfiles[registeredPlayerId] = profile;
+        }
+    });
+
+    socket.on('set_dnd', (enabled) => {
+        if (registeredPlayerId) {
+            playerDND[registeredPlayerId] = enabled;
+        }
+    });
+
+    socket.on('get_player_profile', (playerId, callback) => {
+        const profile = playerProfiles[playerId];
+        if (profile) callback({ found: true, profile, playerId });
+        else callback({ found: false, playerId });
+    });
+
+    socket.on('send_friend_request', (data) => {
+        const targetId = data.targetId;
+        const fromProfile = data.fromProfile;
+
+        if (targetId === registeredPlayerId) {
+            socket.emit('error_msg', "You can't add yourself!");
+            return;
+        }
+
+        if (!pendingFriendRequests[targetId]) pendingFriendRequests[targetId] = [];
+        const existing = pendingFriendRequests[targetId].find(r => r.fromId === registeredPlayerId);
+        if (existing) {
+            socket.emit('error_msg', 'Friend request already pending!');
+            return;
+        }
+
+        const request = { fromId: registeredPlayerId, fromProfile, timestamp: Date.now() };
+        pendingFriendRequests[targetId].push(request);
+
+        const targetSocket = onlinePlayers[targetId];
+        if (targetSocket) {
+            io.to(targetSocket).emit('friend_request_received', request);
+        }
+        socket.emit('friend_request_sent', { targetId });
+    });
+
+    socket.on('respond_friend_request', (data) => {
+        const fromId = data.fromId;
+        const accepted = data.accepted;
+
+        if (pendingFriendRequests[registeredPlayerId]) {
+            pendingFriendRequests[registeredPlayerId] = pendingFriendRequests[registeredPlayerId].filter(r => r.fromId !== fromId);
+        }
+
+        if (accepted) {
+            const senderSocket = onlinePlayers[fromId];
+            const myProfile = playerProfiles[registeredPlayerId] || { name: 'Player', avatar: '👤' };
+            if (senderSocket) {
+                io.to(senderSocket).emit('friend_request_accepted', { playerId: registeredPlayerId, profile: myProfile });
+            }
+            const senderProfile = playerProfiles[fromId] || { name: 'Player', avatar: '👤' };
+            socket.emit('friend_added_mutual', { playerId: fromId, profile: senderProfile });
+        } else {
+            const senderSocket = onlinePlayers[fromId];
+            if (senderSocket) {
+                io.to(senderSocket).emit('friend_request_denied', { playerId: registeredPlayerId });
+            }
+        }
     });
 
     socket.on('create_room', (data) => {
@@ -75,6 +153,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('send_invite', (data) => {
+        if (playerDND[data.friendId]) {
+            socket.emit('error_msg', 'Player has Do Not Disturb enabled!');
+            return;
+        }
         const targetSocket = onlinePlayers[data.friendId];
         if (targetSocket) io.to(targetSocket).emit('game_invite', { roomId: data.roomId, from: data.from });
         else socket.emit('error_msg', 'Friend is offline!');
@@ -86,8 +168,28 @@ io.on('connection', (socket) => {
         callback(result);
     });
 
+    socket.on('leave_room', (roomId) => {
+        const room = rooms[roomId];
+        if (!room) return;
+        const idx = room.players.findIndex(p => p.id === socket.id);
+        if (idx !== -1) {
+            const wasActive = room.gameActive;
+            const gameWasPlayed = room.game_number > 0;
+            let msg;
+            if (wasActive) msg = 'Opponent left mid-game! You win!';
+            else if (gameWasPlayed) msg = 'Opponent has left the room.';
+            else msg = 'Opponent left before the game started.';
+            socket.to(roomId).emit('player_disconnected', { msg, duringGame: wasActive });
+            socket.leave(roomId);
+            delete rooms[roomId];
+        }
+    });
+
     socket.on('disconnect', () => {
-        if (registeredPlayerId) delete onlinePlayers[registeredPlayerId];
+        if (registeredPlayerId) {
+            delete onlinePlayers[registeredPlayerId];
+            delete playerDND[registeredPlayerId];
+        }
         for (const roomId in rooms) {
             const room = rooms[roomId];
             const idx = room.players.findIndex(p => p.id === socket.id);
@@ -95,17 +197,10 @@ io.on('connection', (socket) => {
                 const wasActive = room.gameActive;
                 const gameWasPlayed = room.game_number > 0;
                 let msg;
-                if (wasActive) {
-                    msg = 'Opponent left mid-game! You win!';
-                } else if (gameWasPlayed) {
-                    msg = 'Opponent has left the room.';
-                } else {
-                    msg = 'Opponent left before the game started.';
-                }
-                socket.to(roomId).emit('player_disconnected', {
-                    msg: msg,
-                    duringGame: wasActive
-                });
+                if (wasActive) msg = 'Opponent left mid-game! You win!';
+                else if (gameWasPlayed) msg = 'Opponent has left the room.';
+                else msg = 'Opponent left before the game started.';
+                socket.to(roomId).emit('player_disconnected', { msg: msg, duringGame: wasActive });
                 delete rooms[roomId]; break;
             }
         }
