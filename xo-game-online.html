@@ -1122,7 +1122,7 @@
     </div>
 
     <div id="dnd_btn" onclick="toggle_dnd()">🔔</div>
-    <div id="fr_sidebar_toggle" onclick="toggle_friend_sidebar()" style="position:fixed;bottom:20px;left:20px;width:56px;height:56px;border-radius:50%;background:var(--card-bg);border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;z-index:100;transition:all 0.3s ease;box-shadow:0 4px 15px rgba(0,0,0,0.3);">📬<span id="fr_badge" style="display:none;position:absolute;top:-5px;right:-5px;background:#ef4444;color:white;font-size:11px;font-weight:bold;width:20px;height:20px;border-radius:50%;display:none;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(239,68,68,0.5);"></span></div>
+    <div id="fr_sidebar_toggle" onclick="toggle_friend_sidebar()" style="position:fixed;bottom:20px;left:20px;width:56px;height:56px;border-radius:50%;background:var(--card-bg);border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;z-index:100;transition:all 0.3s ease;box-shadow:0 4px 15px rgba(0,0,0,0.3);">👥<span id="fr_badge" style="display:none;position:absolute;top:-5px;right:-5px;background:#ef4444;color:white;font-size:11px;font-weight:bold;width:20px;height:20px;border-radius:50%;display:none;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(239,68,68,0.5);"></span></div>
     <div id="friend-request-sidebar"></div>
 
     <h1 id="h1">Tic Tac Toe Ultimate</h1>
@@ -1400,31 +1400,87 @@
         function render_friend_requests() {
             let sidebar = document.getElementById('friend-request-sidebar');
             if (!sidebar) return;
-            if (pending_friend_requests.length === 0) {
-                sidebar.innerHTML = `<div class="fr-sidebar-header"><h3>📬 Friend Requests</h3><button class="fr-sidebar-close" onclick="document.getElementById('friend-request-sidebar').classList.remove('open')">✕</button></div><p style="color:#888; font-size:14px; text-align:center; margin-top:40px;">No pending requests.</p>`;
-                update_fr_badge();
-                return;
+
+            let html = `<div class="fr-sidebar-header">
+                <h3>👥 Social Menu</h3>
+                <button class="fr-sidebar-close" onclick="document.getElementById('friend-request-sidebar').classList.remove('open')">✕</button>
+            </div>`;
+
+            // 1. Profile Code
+            html += `<div style="background:rgba(255,204,0,0.1);border:1px solid #ffcc00;border-radius:10px;padding:12px;margin:10px 15px;">
+                <p style="color:#888;font-size:12px;margin:0;text-align:center;">Your Player ID</p>
+                <p class="player-id-display" onclick="navigator.clipboard.writeText('${data.player_id}');show_toast('ID Copied!')" style="font-size:18px;margin:5px 0 0 0;cursor:pointer;text-align:center;color:#ffcc00;">${data.player_id} 📋</p>
+            </div>`;
+
+            // 2. Add Friend
+            html += `<div style="padding:0 15px; margin-bottom:15px;">
+                <input type="text" id="friend_id_input" maxlength="10" placeholder="Player ID (XO-...)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:5px; background:rgba(0,0,0,0.3); color:#ffcc00; border:1px solid #4ade80; text-align:center; font-family:'Orbitron',sans-serif; margin-bottom:5px;">
+                <button onclick="add_friend_action()" style="width:100% !important; padding:8px !important; height:auto; margin:0; border:1px solid #4ade80; font-size:14px; border-radius:5px;">Add Friend</button>
+            </div>`;
+
+            // 3. Friends List
+            html += `<div style="padding:0 15px;">
+                <h4 style="margin:0 0 10px 0; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">Your Friends (${data.friends.length})</h4>
+                <div id="sidebar-friends-container" style="max-height:200px; overflow-y:auto; margin-bottom:15px;">`;
+            
+            if (data.friends.length === 0) {
+                html += `<p style="color:#888; font-size:12px; text-align:center;">No friends yet.</p>`;
+            } else {
+                html += `<p style="color:#888; font-size:12px; text-align:center;">Loading status...</p>`;
             }
-            let html = `<div class="fr-sidebar-header"><h3>📬 Friend Requests (${pending_friend_requests.length})</h3><button class="fr-sidebar-close" onclick="document.getElementById('friend-request-sidebar').classList.remove('open')">✕</button></div>`;
-            pending_friend_requests.forEach((req, idx) => {
-                let avatar = req.fromProfile ? req.fromProfile.avatar : '👤';
-                let name = req.fromProfile ? req.fromProfile.name : 'Player';
-                html += `<div class="fr-request-card" id="fr-card-${req.fromId}">
-                    <div class="fr-request-info">
-                        <div class="fr-request-avatar">${avatar}</div>
-                        <div class="fr-request-details">
-                            <div class="fr-request-name">${name}</div>
-                            <div class="fr-request-id">${req.fromId}</div>
+            html += `</div></div>`;
+
+            // 4. Pending Requests
+            html += `<div style="padding:0 15px;">
+                <h4 style="margin:0 0 10px 0; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">Pending Requests (${pending_friend_requests.length})</h4>`;
+            
+            if (pending_friend_requests.length === 0) {
+                html += `<p style="color:#888; font-size:12px; text-align:center;">No pending requests.</p>`;
+            } else {
+                pending_friend_requests.forEach((req) => {
+                    let avatar = req.fromProfile ? req.fromProfile.avatar : '👤';
+                    let name = req.fromProfile ? req.fromProfile.name : 'Player';
+                    html += `<div class="fr-request-card" id="fr-card-${req.fromId}" style="margin:0 0 10px 0;">
+                        <div class="fr-request-info">
+                            <div class="fr-request-avatar">${avatar}</div>
+                            <div class="fr-request-details">
+                                <div class="fr-request-name" style="font-size:14px;">${name}</div>
+                                <div class="fr-request-id" style="font-size:10px;">${req.fromId}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="fr-request-actions">
-                        <button class="fr-accept-btn" onclick="respond_friend_request('${req.fromId}', true)">✅ Accept</button>
-                        <button class="fr-deny-btn" onclick="respond_friend_request('${req.fromId}', false)">❌ Deny</button>
-                    </div>
-                </div>`;
-            });
+                        <div class="fr-request-actions">
+                            <button class="fr-accept-btn" onclick="respond_friend_request('${req.fromId}', true)" style="font-size:12px; padding:4px 8px;">✅</button>
+                            <button class="fr-deny-btn" onclick="respond_friend_request('${req.fromId}', false)" style="font-size:12px; padding:4px 8px;">❌</button>
+                        </div>
+                    </div>`;
+                });
+            }
+            html += `</div>`;
+            
             sidebar.innerHTML = html;
             update_fr_badge();
+
+            // Fire async friend status update
+            if (data.friends.length > 0 && socket) {
+                let ids = data.friends.map(f => f.id);
+                socket.emit('check_friends_online', ids, (statuses) => {
+                    let fContainer = document.getElementById('sidebar-friends-container');
+                    if (!fContainer) return;
+                    let listHtml = '';
+                    data.friends.forEach(f => {
+                        let online = statuses[f.id];
+                        listHtml += build_friend_card(f, online);
+                    });
+                    fContainer.innerHTML = listHtml;
+                });
+            } else if (data.friends.length > 0) {
+                let fContainer = document.getElementById('sidebar-friends-container');
+                if (fContainer) {
+                    let listHtml = '';
+                    data.friends.forEach(f => listHtml += build_friend_card(f, false));
+                    fContainer.innerHTML = listHtml;
+                }
+            }
         }
 
         function respond_friend_request(fromId, accepted) {
@@ -1448,15 +1504,10 @@
             document.getElementById('game').innerHTML = '';
             let html = `<h3 id='profile_pic'>Profile</h3>
                 <div id='data_username' style="font-size:50px; margin:10px;">${data.avatar}</div>
-                <div style="background:rgba(255,204,0,0.1);border:1px solid #ffcc00;border-radius:10px;padding:12px;margin:10px 0;">
-                    <p style="color:#888;font-size:12px;margin:0;">Your Player ID</p>
-                    <p class="player-id-display" onclick="navigator.clipboard.writeText('${data.player_id}');show_toast('ID Copied!')">${data.player_id} 📋</p>
-                </div>
                 <div id="input_btn_div">
                     <input type="text" id="username_input" maxlength="15" value="${data.username}" style="padding:8px; border-radius:5px; border:1px solid var(--accent); background:var(--bg-color); color:white; text-align:center;">
                     <button onclick="save_username()">Save Name</button>
                 </div>`;
-            html += `<button onclick="show_friends_page()" style="border:2px solid #4ade80; box-shadow:0 0 8px rgba(74,222,128,0.3);">\ud83d\udc65 Friends (${data.friends.length})</button>`;
             html += `<p id="managing_avatar">Manage your Avatars</p>`;
             for (let av in AVATAR_PRICES) {
                 html += `<div id='avatar_div'><span id='avatar'>${av}</span>`;
@@ -1816,8 +1867,8 @@
                 data.friends = data.friends.filter(f => f.id !== info.playerId);
                 save_data(data);
                 show_toast('A friend has removed you from their list.');
-                let container = document.getElementById('friends-list-container');
-                if (container) show_friends_page();
+                let sb = document.getElementById('friend-request-sidebar');
+                if (sb && sb.classList.contains('open')) render_friend_requests();
             });
         }
 
@@ -2470,45 +2521,10 @@
         }
 
         function show_friends_page() {
-            document.getElementById('game').innerHTML = '';
-            let html = `<h3 style="color:white; text-shadow:0 0 5px blue;">👥 Friends</h3>`;
-            html += `<div style="margin:15px 0;"><input type="text" id="friend_id_input" maxlength="10" placeholder="Enter Player ID (XO-XXXXX)" style="font-family:'Orbitron',sans-serif; font-size:16px; text-transform:uppercase; text-align:center; width:280px; padding:10px; background:var(--cell-bg); color:#ffcc00; border:2px solid #4ade80; border-radius:10px; letter-spacing:2px;"><br><button onclick="add_friend_action()" style="border:2px solid #4ade80;">Send Friend Request</button></div>`;
-            if (data.friends.length === 0) {
-                html += `<p style="color:#888; font-size:14px; margin:20px 0;">No friends yet. Share your ID to get started!</p>`;
-            } else {
-                if (socket) {
-                    let ids = data.friends.map(f => f.id);
-                    socket.emit('check_friends_online', ids, (statuses) => {
-                        let listHtml = '';
-                        data.friends.forEach(f => {
-                            let online = statuses[f.id];
-                            // Fetch real profile from server
-                            socket.emit('get_player_profile', f.id, (resp) => {
-                                if (resp.found) {
-                                    f.name = resp.profile.name;
-                                    f.avatar = resp.profile.avatar;
-                                    save_data(data);
-                                    // Re-render if container exists
-                                    let container = document.getElementById('friends-list-container');
-                                    if (container) refresh_friend_cards(statuses);
-                                }
-                            });
-                            listHtml += build_friend_card(f, online);
-                        });
-                        let container = document.getElementById('friends-list-container');
-                        if (container) container.innerHTML = '<div class="friends-scroll-container">' + listHtml + '</div>';
-                    });
-                    html += `<div id="friends-list-container"><p style="color:#888;">Loading...</p></div>`;
-                } else {
-                    html += '<div class="friends-scroll-container">';
-                    data.friends.forEach(f => {
-                        html += build_friend_card(f, false);
-                    });
-                    html += '</div>';
-                }
+            let sidebar = document.getElementById('friend-request-sidebar');
+            if (sidebar && !sidebar.classList.contains('open')) {
+                toggle_friend_sidebar();
             }
-            html += `<button onclick="show_profile()">Back</button>`;
-            document.getElementById('menu').innerHTML = html;
         }
 
         function build_friend_card(f, online) {
@@ -2558,7 +2574,7 @@
                 socket.emit('remove_friend', { friendId: id });
             }
             show_toast('Friend removed.');
-            show_friends_page();
+            render_friend_requests();
         }
 
         function confirm_leave_online() {
