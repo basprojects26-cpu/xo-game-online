@@ -1463,13 +1463,27 @@
             // Fire async friend status update
             if (data.friends.length > 0 && socket) {
                 let ids = data.friends.map(f => f.id);
-                socket.emit('check_friends_online', ids, (statuses) => {
+                socket.emit('check_friends_online', ids, (results) => {
+                    let updated = false;
+                    let statuses = {};
+                    data.friends.forEach(f => {
+                        let res = results[f.id];
+                        if (res) {
+                            statuses[f.id] = res.online;
+                            if (res.profile && (f.name !== res.profile.name || f.avatar !== res.profile.avatar)) {
+                                f.name = res.profile.name;
+                                f.avatar = res.profile.avatar;
+                                updated = true;
+                            }
+                        }
+                    });
+                    if (updated) save_data(data);
+
                     let fContainer = document.getElementById('sidebar-friends-container');
                     if (!fContainer) return;
                     let listHtml = '';
                     data.friends.forEach(f => {
-                        let online = statuses[f.id];
-                        listHtml += build_friend_card(f, online);
+                        listHtml += build_friend_card(f, statuses[f.id]);
                     });
                     fContainer.innerHTML = listHtml;
                 });
@@ -1484,6 +1498,7 @@
         }
 
         function respond_friend_request(fromId, accepted) {
+            if (fromId === "null") fromId = null;
             let card = document.getElementById('fr-card-' + fromId);
             if (card) card.remove();
             pending_friend_requests = pending_friend_requests.filter(r => r.fromId !== fromId);
@@ -1663,18 +1678,27 @@
         let pending_friend_requests = [];
 
         if (socket) {
-            socket.emit('register_player', { playerId: data.player_id, profile: { name: data.username, avatar: data.avatar } });
-            socket.emit('set_dnd', data.dnd);
+            socket.on('connect', () => {
+                socket.emit('register_player', { playerId: data.player_id, profile: { name: data.username, avatar: data.avatar } });
+                socket.emit('set_dnd', data.dnd);
+            });
 
             socket.on('room_created', (roomId) => {
                 online_room = roomId;
                 let inviteHtml = '';
                 if (data.friends.length > 0) {
                     let friendIds = data.friends.map(f => f.id);
-                    socket.emit('check_friends_online', friendIds, (statuses) => {
+                    socket.emit('check_friends_online', friendIds, (results) => {
                         let inviteListHtml = '<h4 style="color:white;margin-top:15px;">Invite a Friend:</h4><div class="friends-scroll-container" style="max-height:200px;">';
+                        let updated = false;
                         data.friends.forEach(f => {
-                            let isOnline = statuses[f.id];
+                            let res = results[f.id];
+                            let isOnline = res ? res.online : false;
+                            if (res && res.profile && (f.name !== res.profile.name || f.avatar !== res.profile.avatar)) {
+                                f.name = res.profile.name;
+                                f.avatar = res.profile.avatar;
+                                updated = true;
+                            }
                             let statusDot = isOnline ? '<span style="color:#4ade80;font-size:12px;">● Online</span>' : '<span style="color:#888;font-size:12px;">● Offline</span>';
                             let inviteBtnStyle = isOnline
                                 ? 'width:auto!important;height:auto!important;padding:6px 14px!important;font-size:12px!important;margin:0!important;border:1px solid #4ade80!important;background:rgba(74,222,128,0.15)!important;color:#4ade80!important;'
@@ -1689,6 +1713,7 @@
                                 <button style="${inviteBtnStyle}">${isOnline ? 'Invite' : 'Offline'}</button>
                             </div>`;
                         });
+                        if (updated) save_data(data);
                         inviteListHtml += '</div>';
                         let container = document.getElementById('invite-friends-container');
                         if (container) container.innerHTML = inviteListHtml;
@@ -2180,11 +2205,20 @@
 
             let turnText;
             if (g.game_over) {
+                let w = null;
+                if (g.mode === 'super') {
+                    w = check_winner(g.big_board, 3);
+                    if (!w && !g.big_board.includes("")) {
+                        if (g.small_wins['X'] > g.small_wins['O']) w = 'X';
+                        else if (g.small_wins['O'] > g.small_wins['X']) w = 'O';
+                    }
+                } else {
+                    w = check_winner(g.board, g.size);
+                }
+
                 if (is_online_mode) {
-                    let w = check_winner(g.board, g.size);
                     turnText = w ? (w === my_online_symbol ? 'You Win! \uD83C\uDF89' : 'You Lose!') : 'Draw!';
                 } else {
-                    let w = check_winner(g.board, g.size);
                     turnText = w ? `${symbols[w]} Wins!` : 'Draw!';
                 }
             } else {

@@ -52,6 +52,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('send_friend_request', (data) => {
+        if (!registeredPlayerId) {
+            socket.emit('error_msg', 'Not registered yet. Please refresh the page.');
+            return;
+        }
         const targetId = data.targetId;
         const fromProfile = data.fromProfile;
 
@@ -176,7 +180,7 @@ io.on('connection', (socket) => {
     socket.on('check_friends_online', (friendIds, callback) => {
         const result = {};
         friendIds.forEach(id => {
-            result[id] = !!onlinePlayers[id];
+            result[id] = { online: !!onlinePlayers[id], profile: playerProfiles[id] || null };
         });
         if (typeof callback === 'function') callback(result);
     });
