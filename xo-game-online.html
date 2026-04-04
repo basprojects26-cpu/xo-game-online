@@ -210,7 +210,7 @@
 
             padding: 30px;
             border-radius: 20px;
-
+
             /* Increased max-width to fit the Super Tic-Tac-Toe grid */
             max-width: 600px;
             width: 90%;
@@ -2108,7 +2108,7 @@
                 for (let big_idx = 0; big_idx < 9; big_idx++) {
                     let bigCell = document.createElement("div");
                     bigCell.className = "big-cell";
-
+
                     if (!g.game_over && (g.next_big_square === null || g.next_big_square === big_idx) && g.big_board[big_idx] === "") {
                         bigCell.classList.add("highlight");
                     }
@@ -2202,7 +2202,7 @@
                 let big_idx = Math.floor(i / 9);
                 let small_board = g.board.slice(big_idx * 9, big_idx * 9 + 9);
                 let small_winner = check_winner(small_board, 3);
-
+
                 if (small_winner) {
                     g.big_board[big_idx] = small_winner;
                     g.small_wins[small_winner]++;
