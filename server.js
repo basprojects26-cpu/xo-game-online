@@ -85,6 +85,9 @@ io.on('connection', (socket) => {
             pendingFriendRequests[registeredPlayerId] = pendingFriendRequests[registeredPlayerId].filter(r => r.fromId !== fromId);
         }
 
+        // Send back the cleaned pending list so the client stays in sync
+        socket.emit('pending_friend_requests', pendingFriendRequests[registeredPlayerId] || []);
+
         if (accepted) {
             const senderSocket = onlinePlayers[fromId];
             const myProfile = playerProfiles[registeredPlayerId] || { name: 'Player', avatar: '👤' };
@@ -98,6 +101,14 @@ io.on('connection', (socket) => {
             if (senderSocket) {
                 io.to(senderSocket).emit('friend_request_denied', { playerId: registeredPlayerId });
             }
+        }
+    });
+
+    socket.on('remove_friend', (data) => {
+        const friendId = data.friendId;
+        const friendSocket = onlinePlayers[friendId];
+        if (friendSocket) {
+            io.to(friendSocket).emit('friend_removed', { playerId: registeredPlayerId });
         }
     });
 
@@ -164,8 +175,10 @@ io.on('connection', (socket) => {
 
     socket.on('check_friends_online', (friendIds, callback) => {
         const result = {};
-        friendIds.forEach(id => { result[id] = !!onlinePlayers[id]; });
-        callback(result);
+        friendIds.forEach(id => {
+            result[id] = !!onlinePlayers[id];
+        });
+        if (typeof callback === 'function') callback(result);
     });
 
     socket.on('leave_room', (roomId) => {

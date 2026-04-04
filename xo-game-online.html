@@ -1086,6 +1086,19 @@
             background: rgba(220,38,38,0.3) !important;
             border: 1px solid #dc2626 !important;
         }
+        /* Force vertical layout for friend list containers inside #menu */
+        #menu .friends-scroll-container,
+        #menu #friends-list-container,
+        #menu #invite-friends-container {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
+            align-items: stretch !important;
+            background: transparent !important;
+        }
+        #fr_sidebar_toggle:hover {
+            transform: scale(1.1);
+        }
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -1114,6 +1127,7 @@
     </div>
 
     <div id="dnd_btn" onclick="toggle_dnd()">🔔</div>
+    <div id="fr_sidebar_toggle" onclick="toggle_friend_sidebar()" style="position:fixed;bottom:20px;left:20px;width:56px;height:56px;border-radius:50%;background:var(--card-bg);border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;z-index:100;transition:all 0.3s ease;box-shadow:0 4px 15px rgba(0,0,0,0.3);">📬<span id="fr_badge" style="display:none;position:absolute;top:-5px;right:-5px;background:#ef4444;color:white;font-size:11px;font-weight:bold;width:20px;height:20px;border-radius:50%;display:none;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(239,68,68,0.5);"></span></div>
     <div id="friend-request-sidebar"></div>
 
     <h1 id="h1">Tic Tac Toe Ultimate</h1>
@@ -1366,19 +1380,41 @@
             }
         }
 
+        function toggle_friend_sidebar() {
+            let sidebar = document.getElementById('friend-request-sidebar');
+            if (!sidebar) return;
+            if (sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+            } else {
+                render_friend_requests();
+                sidebar.classList.add('open');
+            }
+        }
+
+        function update_fr_badge() {
+            let badge = document.getElementById('fr_badge');
+            if (!badge) return;
+            if (pending_friend_requests.length > 0) {
+                badge.style.display = 'flex';
+                badge.innerText = pending_friend_requests.length;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
         function render_friend_requests() {
             let sidebar = document.getElementById('friend-request-sidebar');
             if (!sidebar) return;
             if (pending_friend_requests.length === 0) {
-                sidebar.innerHTML = '';
-                sidebar.classList.remove('open');
+                sidebar.innerHTML = `<div class="fr-sidebar-header"><h3>📬 Friend Requests</h3><button class="fr-sidebar-close" onclick="document.getElementById('friend-request-sidebar').classList.remove('open')">✕</button></div><p style="color:#888; font-size:14px; text-align:center; margin-top:40px;">No pending requests.</p>`;
+                update_fr_badge();
                 return;
             }
             let html = `<div class="fr-sidebar-header"><h3>📬 Friend Requests (${pending_friend_requests.length})</h3><button class="fr-sidebar-close" onclick="document.getElementById('friend-request-sidebar').classList.remove('open')">✕</button></div>`;
             pending_friend_requests.forEach((req, idx) => {
                 let avatar = req.fromProfile ? req.fromProfile.avatar : '👤';
                 let name = req.fromProfile ? req.fromProfile.name : 'Player';
-                html += `<div class="fr-request-card">
+                html += `<div class="fr-request-card" id="fr-card-${req.fromId}">
                     <div class="fr-request-info">
                         <div class="fr-request-avatar">${avatar}</div>
                         <div class="fr-request-details">
@@ -1393,14 +1429,16 @@
                 </div>`;
             });
             sidebar.innerHTML = html;
-            sidebar.classList.add('open');
+            update_fr_badge();
         }
 
         function respond_friend_request(fromId, accepted) {
+            let card = document.getElementById('fr-card-' + fromId);
+            if (card) card.remove();
+            pending_friend_requests = pending_friend_requests.filter(r => r.fromId !== fromId);
             if (socket) {
                 socket.emit('respond_friend_request', { fromId: fromId, accepted: accepted });
             }
-            pending_friend_requests = pending_friend_requests.filter(r => r.fromId !== fromId);
             if (accepted) {
                 show_toast('Friend request accepted! 🎉');
             } else {
@@ -1437,8 +1475,10 @@
         }
 
         function save_username() {
-            let newName = document.getElementById("username_input").value;
-            if (newName.trim() !== "") {
+            let input = document.getElementById("username_input");
+            if (!input) return;
+            let newName = input.value.trim();
+            if (newName !== "") {
                 if (newName.length > 15) {
                     show_toast("Username too long!");
                     return;
@@ -1447,7 +1487,10 @@
                 save_data(data);
                 update_profile_icon();
                 update_profile_on_server();
-                show_toast("Name saved smoothly!");
+                show_toast("Name saved: " + newName);
+                show_profile();
+            } else {
+                show_toast("Name cannot be empty!");
             }
         }
 
@@ -1581,18 +1624,30 @@
                 online_room = roomId;
                 let inviteHtml = '';
                 if (data.friends.length > 0) {
-                    inviteHtml = '<h4 style="color:white;margin-top:15px;">Invite a Friend:</h4><div class="friends-scroll-container" style="max-height:200px;">';
-                    data.friends.forEach(f => {
-                        inviteHtml += `<div class="friend-card" onclick="send_invite_to('${f.id}')" style="cursor:pointer;">
-                            <div class="friend-card-avatar">${f.avatar}</div>
-                            <div class="friend-card-info">
-                                <div class="friend-card-name">${f.name}</div>
-                                <div class="friend-card-id">${f.id}</div>
-                            </div>
-                            <button style="width:auto!important;height:auto!important;padding:6px 14px!important;font-size:12px!important;margin:0!important;border:1px solid #4ade80!important;background:rgba(74,222,128,0.15)!important;color:#4ade80!important;">Invite</button>
-                        </div>`;
+                    let friendIds = data.friends.map(f => f.id);
+                    socket.emit('check_friends_online', friendIds, (statuses) => {
+                        let inviteListHtml = '<h4 style="color:white;margin-top:15px;">Invite a Friend:</h4><div class="friends-scroll-container" style="max-height:200px;">';
+                        data.friends.forEach(f => {
+                            let isOnline = statuses[f.id];
+                            let statusDot = isOnline ? '<span style="color:#4ade80;font-size:12px;">● Online</span>' : '<span style="color:#888;font-size:12px;">● Offline</span>';
+                            let inviteBtnStyle = isOnline
+                                ? 'width:auto!important;height:auto!important;padding:6px 14px!important;font-size:12px!important;margin:0!important;border:1px solid #4ade80!important;background:rgba(74,222,128,0.15)!important;color:#4ade80!important;'
+                                : 'width:auto!important;height:auto!important;padding:6px 14px!important;font-size:12px!important;margin:0!important;border:1px solid #888!important;background:rgba(136,136,136,0.15)!important;color:#888!important;opacity:0.6;pointer-events:none;';
+                            inviteListHtml += `<div class="friend-card" ${isOnline ? `onclick="send_invite_to('${f.id}')" style="cursor:pointer;"` : 'style="cursor:not-allowed;opacity:0.7;"'}>
+                                <div class="friend-card-avatar">${f.avatar}</div>
+                                <div class="friend-card-info">
+                                    <div class="friend-card-name">${f.name}</div>
+                                    <div class="friend-card-id">${f.id}</div>
+                                    <div>${statusDot}</div>
+                                </div>
+                                <button style="${inviteBtnStyle}">${isOnline ? 'Invite' : 'Offline'}</button>
+                            </div>`;
+                        });
+                        inviteListHtml += '</div>';
+                        let container = document.getElementById('invite-friends-container');
+                        if (container) container.innerHTML = inviteListHtml;
                     });
-                    inviteHtml += '</div>';
+                    inviteHtml = '<div id="invite-friends-container"><p style="color:#888;font-size:14px;">Loading friends...</p></div>';
                 }
                 document.getElementById('menu').innerHTML = `
                     <h3 style="color:white; text-shadow: 0 0 5px blue; margin-bottom:20px;">Room Created!</h3>
@@ -1725,13 +1780,17 @@
                 if (!pending_friend_requests.find(r => r.fromId === request.fromId)) {
                     pending_friend_requests.push(request);
                     render_friend_requests();
+                    update_fr_badge();
                     show_toast(`${request.fromProfile.avatar} ${request.fromProfile.name} sent you a friend request!`);
+                    let sidebar = document.getElementById('friend-request-sidebar');
+                    if (sidebar) sidebar.classList.add('open');
                 }
             });
 
             socket.on('pending_friend_requests', (requests) => {
                 pending_friend_requests = requests;
                 render_friend_requests();
+                update_fr_badge();
             });
 
             socket.on('friend_request_sent', (info) => {
@@ -1756,6 +1815,14 @@
                     save_data(data);
                 }
                 show_toast(`You are now friends with ${info.profile.name}!`);
+            });
+
+            socket.on('friend_removed', (info) => {
+                data.friends = data.friends.filter(f => f.id !== info.playerId);
+                save_data(data);
+                show_toast('A friend has removed you from their list.');
+                let container = document.getElementById('friends-list-container');
+                if (container) show_friends_page();
             });
         }
 
@@ -2492,6 +2559,9 @@
         function remove_friend(id) {
             data.friends = data.friends.filter(f => f.id !== id);
             save_data(data);
+            if (socket) {
+                socket.emit('remove_friend', { friendId: id });
+            }
             show_toast('Friend removed.');
             show_friends_page();
         }
