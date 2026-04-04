@@ -535,58 +535,46 @@
 
         #themes {
             height: 300px;
-            width: 700px !important;
+            width: 100% !important;
+            max-width: 600px;
             line-height: 300px;
             margin: 0 auto 30px auto !important;
             position: relative;
             z-index: 2;
         }
 
-        #buy_btn {
-            width: 100.2%;
+        #buy_btn, #equip_btn {
+            width: 100% !important;
             position: absolute;
-            bottom: -3.5%;
+            bottom: 0;
+            left: 0;
+            margin: 0 !important;
             border-bottom-left-radius: 10px;
             border-bottom-right-radius: 10px;
-            border-top-left-radius: 0px;
-            border-top-right-radius: 0px;
-            left: -1%;
-
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+            height: 75px !important;
         }
 
         #equip_span {
-            width: 100.2%;
+            width: 100%;
             position: absolute;
             background-color: red;
             z-index: 2;
-            height: 72px;
-            bottom: 0%;
+            height: 75px;
+            bottom: 0;
+            left: 0;
             border-bottom-left-radius: 10px;
             border-bottom-right-radius: 10px;
-            border-top-left-radius: 0px;
-            border-top-right-radius: 0px;
-            left: 0%;
             line-height: 75px;
             font-family: 'Orbitron', sans-serif;
             font-size: 25px;
             font-weight: bold;
-        }
-
-        #equip_btn {
-            width: 100.2%;
-            position: absolute;
-            bottom: -3.5%;
-            border-bottom-left-radius: 10px;
-            border-bottom-right-radius: 10px;
-            border-top-left-radius: 0px;
-            border-top-right-radius: 0px;
-            left: -1%;
-
+            display: block;
         }
 
         .O {
             font-family: 'Courier New', Courier, monospace !important;
-
         }
 
         #locker {
@@ -596,21 +584,21 @@
         }
 
         #themes img {
-            width: 820px;
-            height: 400px;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             position: absolute;
-            top: 0%;
-            left: 0%;
+            top: 0;
+            left: 0;
             border-top-left-radius: 10px;
             border-top-right-radius: 10px;
-
         }
 
         #rules_div {
-            width: 700px;
+            width: 100%;
+            max-width: 700px;
             margin-top: -80px;
             font-size: 25px;
-            margin-left: -90px;
             margin-bottom: 40px !important;
         }
 
@@ -663,8 +651,10 @@
         #themes_logos {
             font-size: 150px;
             position: absolute;
-            top: -5%;
-            left: 7%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin-top: -20px; /* offset slightly above the button */
         }
 
         /* --- ADDED SMOOTH NOTIFICATION & CONFIRMATION STYLES --- */
