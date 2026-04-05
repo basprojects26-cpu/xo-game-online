@@ -260,8 +260,6 @@
         .cell {
             width: 80px;
             height: 80px;
-            margin: 0;
-            padding: 0;
             font-size: 32px;
             background: var(--cell-bg);
             border: 2px solid rgba(255, 255, 255, 0.05);
@@ -286,8 +284,8 @@
         /* Super Tic-Tac-Toe Styling */
         .super-grid {
             margin: 70px auto 25px auto !important;
-            display: grid;
-            grid-template-columns: repeat(3, max-content);
+            display: inline-grid;
+            grid-template-columns: repeat(3, auto);
             gap: 12px;
             justify-content: center;
             background: rgba(0, 0, 0, 0.6);
@@ -313,8 +311,6 @@
         .super-cell {
             width: 45px;
             height: 45px;
-            margin: 0;
-            padding: 0;
             font-size: 22px;
             background: var(--cell-bg);
             border: 1px solid rgba(255, 255, 255, 0.1);
