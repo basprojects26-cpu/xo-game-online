@@ -210,7 +210,8 @@
 
             padding: 30px;
             border-radius: 20px;
-
+
+
             /* Increased max-width to fit the Super Tic-Tac-Toe grid */
             max-width: 600px;
             width: 90%;
@@ -259,6 +260,8 @@
         .cell {
             width: 80px;
             height: 80px;
+            margin: 0;
+            padding: 0;
             font-size: 32px;
             background: var(--cell-bg);
             border: 2px solid rgba(255, 255, 255, 0.05);
@@ -283,8 +286,8 @@
         /* Super Tic-Tac-Toe Styling */
         .super-grid {
             margin: 70px auto 25px auto !important;
-            display: inline-grid;
-            grid-template-columns: repeat(3, auto);
+            display: grid;
+            grid-template-columns: repeat(3, max-content);
             gap: 12px;
             justify-content: center;
             background: rgba(0, 0, 0, 0.6);
@@ -310,6 +313,8 @@
         .super-cell {
             width: 45px;
             height: 45px;
+            margin: 0;
+            padding: 0;
             font-size: 22px;
             background: var(--cell-bg);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -2255,7 +2260,8 @@
                 for (let big_idx = 0; big_idx < 9; big_idx++) {
                     let bigCell = document.createElement("div");
                     bigCell.className = "big-cell";
-
+
+
                     if (!g.game_over && (g.next_big_square === null || g.next_big_square === big_idx) && g.big_board[big_idx] === "") {
                         bigCell.classList.add("highlight");
                     }
@@ -2349,7 +2355,8 @@
                 let big_idx = Math.floor(i / 9);
                 let small_board = g.board.slice(big_idx * 9, big_idx * 9 + 9);
                 let small_winner = check_winner(small_board, 3);
-
+
+
                 if (small_winner) {
                     g.big_board[big_idx] = small_winner;
                     g.small_wins[small_winner]++;
