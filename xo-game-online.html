@@ -1334,7 +1334,8 @@
             if (!data.player_id) data.player_id = 'XO-' + Math.random().toString(36).substring(2, 7).toUpperCase();
             if (!data.friends) data.friends = [];
             if (data.dnd === undefined) data.dnd = false;
-            data.coins = Infinity
+            data.coins = 5000
+        
             save_data(data);
             return data;
         }
