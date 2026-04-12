@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tic Tac Toe Ultimate</title>
+    <title>Tic Tac Toe</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
@@ -1831,8 +1831,7 @@
     <nav class="top-navbar">
         <div class="nav-left">
             <button class="nav-hamburger" onclick="toggleDrawer()">☰</button>
-            <span style="font-family:'Orbitron',sans-serif;font-size:14px;font-weight:bold;color:var(--accent);">TTT
-                Ultimate</span>
+            <span style="font-family:'Orbitron',sans-serif;font-size:14px;font-weight:bold;color:var(--accent);">TTT</span>
         </div>
         <div class="nav-right">
             <span class="nav-coins" id="nav_coins">🪙 0</span>
@@ -1887,7 +1886,7 @@
             style="display:none;"></span></div>
     <div id="friend-request-sidebar"></div>
 
-    <h1 id="h1">Tic Tac Toe Ultimate</h1>
+    <h1 id="h1">Tic Tac Toe</h1>
     <div id="menu"></div>
     <div id="game"></div>
     <div class="bg-animation" id="bg_animation">
@@ -2822,7 +2821,7 @@
             document.getElementById("game").innerHTML = "";
             document.getElementById("menu").innerHTML = `
         <button onclick="play_menu(),change_h1()">Play Local</button>
-        <button onclick="online_menu(),change_h1()" style="border: 2px solid #ffcc00; box-shadow: 0 0 10px #ffcc00;">🔥 Play Online</button>
+        <button onclick="online_menu(),change_h1()" style="border: 2px solid #ffcc00; box-shadow: 0 0 10px #ffcc00;">Play Online</button>
         <button onclick="special_modes_choice()">Special Game Modes</button>
         <button onclick="shop();body_check()">Shop / Locker</button>
         <button onclick="show_rules()">Rules</button>
@@ -3523,7 +3522,7 @@
         }
         var title = document.getElementById('h1');
         function change_h1() { title.innerHTML = 'Choose your opponent'; }
-        function change_h1_menu() { title.innerHTML = 'Tic Tac Toe Ultimate'; }
+        function change_h1_menu() { title.innerHTML = 'Tic Tac Toe'; }
 
         show_menu();
         // Initialize DND button state on load
