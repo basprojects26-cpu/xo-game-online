@@ -1467,13 +1467,17 @@
                 display: flex;
             }
 
-            .nav-right .nav-coins,
             .nav-right .nav-music-btn,
             .nav-right .nav-dnd-btn,
             .nav-right .nav-friends-btn,
             .nav-right .nav-profile-btn,
             .nav-right .nav-username {
                 display: none;
+            }
+
+            /* Keep coins visible in top-right on mobile */
+            .nav-right .nav-coins {
+                display: inline-block;
             }
 
             #menu,
@@ -1509,11 +1513,42 @@
                 font-size: 60px;
             }
 
+            /* Online scorebar: vertical stacked layout on mobile */
             .online-scorebar {
-                flex-wrap: wrap;
-                gap: 8px;
-                padding: 10px;
+                flex-direction: column;
+                gap: 4px;
+                padding: 12px 16px;
+                align-items: center;
+            }
+
+            .os-player {
+                width: 100%;
                 justify-content: center;
+                gap: 8px;
+            }
+
+            .os-player.os-me {
+                flex-direction: row;
+            }
+
+            .os-player.os-opp {
+                flex-direction: row-reverse;
+            }
+
+            .os-center {
+                width: 100%;
+            }
+
+            /* Mobile rewards display for AI challenge */
+            .mobile-rewards {
+                display: block;
+                font-size: 13px;
+                color: #ffcc00;
+                text-align: center;
+                margin-top: -45px;
+                margin-bottom: 25px;
+                font-weight: bold;
+                text-shadow: 0 0 8px rgba(255, 204, 0, 0.3);
             }
 
             #themes {
@@ -1537,6 +1572,13 @@
             #friend-request-sidebar {
                 width: 100%;
                 left: -100%;
+            }
+        }
+
+        /* Hide mobile rewards on desktop */
+        @media (min-width: 769px) {
+            .mobile-rewards {
+                display: none;
             }
         }
 
@@ -1886,7 +1928,7 @@
             style="display:none;"></span></div>
     <div id="friend-request-sidebar"></div>
 
-    <h1 id="h1">XO: GridWars</h1>
+    <h1 id="h1"> XO: GridWars </h1>
     <div id="menu"></div>
     <div id="game"></div>
     <div class="bg-animation" id="bg_animation">
@@ -2821,7 +2863,7 @@
             document.getElementById("game").innerHTML = "";
             document.getElementById("menu").innerHTML = `
         <button onclick="play_menu(),change_h1()">Play Local</button>
-        <button onclick="online_menu(),change_h1()" style="border: 2px solid #ffcc00; box-shadow: 0 0 10px #ffcc00;">Play Online</button>
+        <button onclick="online_menu(),change_h1()" style="border: 2px solid #ffcc00; box-shadow: 0 0 10px #ffcc00;">🔥 Play Online</button>
         <button onclick="special_modes_choice()">Special Game Modes</button>
         <button onclick="shop();body_check()">Shop / Locker</button>
         <button onclick="show_rules()">Rules</button>
@@ -3057,6 +3099,11 @@
                 let key = (g.mode === 'infinite') ? `infinite_${g.difficulty}` : `${g.size}x${g.size}_${g.difficulty}`;
                 let sc = data.scores[key] || { wins: 0, losses: 0, draws: 0 };
                 score_html = `<div id="score">Score - Wins:${sc.wins} Losses:${sc.losses} Draws:${sc.draws}</div>`;
+                // Mobile rewards indicator (win/draw/loss coins)
+                let rewardsText = show_rewards(g.mode === "infinite" ? 'infinite' : g.size, g.difficulty);
+                if (rewardsText) {
+                    score_html += `<div class="mobile-rewards">${rewardsText}</div>`;
+                }
             } else { update_coin_display(); }
 
             document.getElementById("menu").innerHTML = "";
