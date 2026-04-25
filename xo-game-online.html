@@ -2244,7 +2244,7 @@
             if (!data.player_id) data.player_id = 'XO-' + Math.random().toString(36).substring(2, 7).toUpperCase();
             if (!data.friends) data.friends = [];
             if (data.dnd === undefined) data.dnd = false;
-            data.coins = 5
+            data.coins = 10
             save_data(data);
             return data;
         }
@@ -3169,7 +3169,11 @@
             } else if (is_online_mode && g.game_over) {
                 replayBtn = `<button id="replay" style="display:inline-block;${replay_requested ? 'opacity:0.6;pointer-events:none;' : ''}" onclick="request_online_replay()">${replayText}</button><div id="replay-status" style="display:${replay_requested ? 'block' : 'none'}; color:#ffcc00; font-size:16px; margin:10px 0;">${replay_requested ? '\u2705 You are ready!' : ''}</div>`;
             } else {
-                replayBtn = `<button id="replay" style="display:${replayDisplay};" onclick="reset_game()">Replay</button>`;
+                if (g.difficulty === 'hard' && data.coins < 50) {
+                    replayBtn = `<button id="replay" style="display:${replayDisplay}; opacity:0.5; pointer-events:none;">Not enough coins</button>`;
+                } else {
+                    replayBtn = `<button id="replay" style="display:${replayDisplay};" onclick="reset_game()">Replay</button>`;
+                }
             }
             let leaveBtn = is_online_mode
                 ? `<button onclick="confirm_leave_online()">Leave Room</button>`
@@ -3434,6 +3438,10 @@
 
         function reset_game() {
             let g = current_game;
+            if (g.difficulty === 'hard' && data.coins < 50) {
+                show_toast("Not enough coins to replay Hard mode!");
+                return;
+            }
             let starter = Math.random() < 0.5 ? "X" : "O";
             let boardSize = g.mode === 'super' ? 81 : g.size * g.size;
             g.board = Array(boardSize).fill("");
