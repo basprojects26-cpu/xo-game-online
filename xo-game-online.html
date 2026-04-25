@@ -2400,7 +2400,12 @@
                     let fContainer = document.getElementById('sidebar-friends-container');
                     if (!fContainer) return;
                     let listHtml = '';
-                    data.friends.forEach(f => {
+                    let sortedFriends = [...data.friends].sort((a, b) => {
+                        let aOnline = statuses[a.id] || false;
+                        let bOnline = statuses[b.id] || false;
+                        return (aOnline === bOnline) ? 0 : aOnline ? -1 : 1;
+                    });
+                    sortedFriends.forEach(f => {
                         listHtml += build_friend_card(f, statuses[f.id]);
                     });
                     fContainer.innerHTML = listHtml;
@@ -2609,7 +2614,12 @@
                     socket.emit('check_friends_online', friendIds, (results) => {
                         let inviteListHtml = '<h4 style="color:white;margin-top:15px;">Invite a Friend:</h4><div class="friends-scroll-container" style="max-height:200px;">';
                         let updated = false;
-                        data.friends.forEach(f => {
+                        let sortedFriends = [...data.friends].sort((a, b) => {
+                            let aOnline = results[a.id] ? results[a.id].online : false;
+                            let bOnline = results[b.id] ? results[b.id].online : false;
+                            return (aOnline === bOnline) ? 0 : aOnline ? -1 : 1;
+                        });
+                        sortedFriends.forEach(f => {
                             let res = results[f.id];
                             let isOnline = res ? res.online : false;
                             if (res && res.profile && (f.name !== res.profile.name || f.avatar !== res.profile.avatar)) {
@@ -3506,7 +3516,12 @@
             let container = document.getElementById('friends-list-container');
             if (!container) return;
             let listHtml = '';
-            data.friends.forEach(f => {
+            let sortedFriends = [...data.friends].sort((a, b) => {
+                let aOnline = statuses ? statuses[a.id] : false;
+                let bOnline = statuses ? statuses[b.id] : false;
+                return (aOnline === bOnline) ? 0 : aOnline ? -1 : 1;
+            });
+            sortedFriends.forEach(f => {
                 let online = statuses ? statuses[f.id] : false;
                 listHtml += build_friend_card(f, online);
             });
