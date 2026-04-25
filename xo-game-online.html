@@ -744,12 +744,28 @@
             border-radius: 15px;
             border: 2px solid var(--accent);
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .confirm-box button {
-            width: auto;
+            width: auto !important;
+            max-width: none !important;
             min-width: 100px;
-            margin: 10px;
+            margin: 10px !important;
+            display: inline-block !important;
+        }
+
+        .confirm-box p {
+            width: 100%;
+        }
+
+        .confirm-box .confirm-btn-row {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 10px;
         }
 
         /* Music Control Panel */
@@ -1864,8 +1880,10 @@
     <div id="custom-confirm">
         <div class="confirm-box">
             <p id="confirm-msg" style="font-size: 20px; margin-bottom: 20px;"></p>
-            <button id="confirm-yes">Yes</button>
-            <button id="confirm-no">No</button>
+            <div class="confirm-btn-row">
+                <button id="confirm-yes">Yes</button>
+                <button id="confirm-no">No</button>
+            </div>
         </div>
     </div>
 
