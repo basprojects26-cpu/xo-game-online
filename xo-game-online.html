@@ -2290,6 +2290,7 @@
             if (!data.friends) data.friends = [];
             if (data.dnd === undefined) data.dnd = false;
             if (data.coins == null || isNaN(data.coins)) data.coins = 0;
+            data.coins=10
             save_data(data);
             return data;
         }
